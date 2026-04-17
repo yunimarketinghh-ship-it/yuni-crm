@@ -1,0 +1,160 @@
+import { useState } from 'react'
+import { Contact, supabase } from '../lib/supabase'
+import { X } from 'lucide-react'
+
+interface Props {
+  contact: Contact | null
+  onClose: () => void
+  onSave: () => void
+}
+
+export default function ContactModal({ contact, onClose, onSave }: Props) {
+  const [formData, setFormData] = useState({
+    name: contact?.name || '',
+    email: contact?.email || '',
+    phone: contact?.phone || '',
+    company: contact?.company || '',
+    produkt: contact?.produkt || '',
+    startzeitpunkt: contact?.startzeitpunkt || '',
+  })
+  const [saving, setSaving] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+
+    try {
+      if (contact?.id) {
+        // Update
+        await supabase
+          .from('contacts')
+          .update(formData)
+          .eq('id', contact.id)
+      } else {
+        // Create
+        await supabase
+          .from('contacts')
+          .insert([{ ...formData, pipeline_status: 'lead' }])
+      }
+
+      onSave()
+    } catch (error) {
+      console.error('Error saving contact:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {contact ? 'Kontakt bearbeiten' : 'Neuer Kontakt'}
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="Vollständiger Name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="email@example.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Telefon
+            </label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={e => setFormData({ ...formData, phone: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="+49 123 456789"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Firma
+            </label>
+            <input
+              type="text"
+              value={formData.company}
+              onChange={e => setFormData({ ...formData, company: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="Firmenname"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Produkt
+            </label>
+            <input
+              type="text"
+              value={formData.produkt}
+              onChange={e => setFormData({ ...formData, produkt: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="z.B. Erklärvideo"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Startzeitpunkt
+            </label>
+            <input
+              type="text"
+              value={formData.startzeitpunkt}
+              onChange={e => setFormData({ ...formData, startzeitpunkt: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="z.B. Innerhalb 2 Wochen"
+            />
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
+            >
+              Abbrechen
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {saving ? 'Speichert...' : 'Speichern'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
