@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Contact, supabase } from '../lib/supabase'
+import { Contact } from '../lib/supabase'
 import { X } from 'lucide-react'
 
 interface Props {
@@ -19,27 +19,29 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
   })
   const [saving, setSaving] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-
     try {
+      const existing: Contact[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
       if (contact?.id) {
-        // Update
-        await supabase
-          .from('contacts')
-          .update(formData)
-          .eq('id', contact.id)
+        const updated = existing.map(c => c.id === contact.id ? { ...c, ...formData } : c)
+        localStorage.setItem('crm_contacts', JSON.stringify(updated))
       } else {
-        // Create
-        await supabase
-          .from('contacts')
-          .insert([{ ...formData, pipeline_status: 'lead' }])
+        const newContact: Contact = {
+          id: Math.random().toString(36).substr(2, 9),
+          ...formData,
+          status: 'lead',
+          pipeline_status: 'lead',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+        existing.push(newContact)
+        localStorage.setItem('crm_contacts', JSON.stringify(existing))
       }
-
       onSave()
-    } catch (error) {
-      console.error('Error saving contact:', error)
+    } catch (err) {
+      console.error('Error saving contact:', err)
     } finally {
       setSaving(false)
     }
@@ -68,7 +70,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder="Vollständiger Name"
+              placeholder="VollstÃ¤ndiger Name"
             />
           </div>
 
@@ -120,7 +122,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
               value={formData.produkt}
               onChange={e => setFormData({ ...formData, produkt: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder="z.B. Erklärvideo"
+              placeholder="z.B. ErklÃ¤rvideo"
             />
           </div>
 
