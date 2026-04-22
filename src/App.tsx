@@ -104,7 +104,7 @@ export default function App() {
                 <span className="text-white font-bold text-lg">Y</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 leading-none">YUNI CRM2</h1>
+                <h1 className="text-xl font-bold text-gray-900 leading-none">YUNI CRM</h1>
                 <p className="text-xs text-gray-500">Lead Management</p>
               </div>
             </div>
