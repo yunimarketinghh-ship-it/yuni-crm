@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Contact, supabase } from '../lib/supabase'
+import { Contact } from '../lib/supabase'
 import { Phone, Mail, Search, Filter, Trash2, Edit2, UserPlus } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -32,16 +32,14 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
     return matchSearch && matchStatus
   })
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('Kontakt wirklich löschen?')) return
+    if (!confirm('Kontakt wirklich lÃ¶schen?')) return
     setDeleting(id)
-    try {
-      await supabase.from('contacts').delete().eq('id', id)
-      onRefresh()
-    } finally {
-      setDeleting(null)
-    }
+    const existing: Contact[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
+    localStorage.setItem('crm_contacts', JSON.stringify(existing.filter(x => x.id !== id)))
+    setDeleting(null)
+    onRefresh()
   }
 
   return (
@@ -86,7 +84,7 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kontakt</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Produkt</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Hinzugefügt</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">HinzugefÃ¼gt</th>
                 <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aktionen</th>
               </tr>
             </thead>
@@ -107,7 +105,7 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
                         <span className="font-semibold text-gray-900 text-sm">{contact.name}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-sm text-gray-500">{contact.company || '—'}</td>
+                    <td className="px-5 py-4 text-sm text-gray-500">{contact.company || 'â'}</td>
                     <td className="px-5 py-4 text-sm">
                       <div className="flex flex-col gap-0.5">
                         {contact.email && (
@@ -137,8 +135,8 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
                     </td>
                     <td className="px-5 py-4 text-sm text-gray-500">
                       {(contact.product || contact.produkt)
-                        ? `${contact.product || contact.produkt}${contact.price ? ` · ${contact.price}€` : ''}`
-                        : '—'}
+                        ? `${contact.product || contact.produkt}${contact.price ? ` Â· ${contact.price}â¬` : ''}`
+                        : 'â'}
                     </td>
                     <td className="px-5 py-4 text-sm text-gray-400">
                       {formatDistanceToNow(new Date(contact.created_at), { addSuffix: true, locale: de })}
@@ -156,7 +154,7 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
                           onClick={(e) => handleDelete(contact.id, e)}
                           disabled={deleting === contact.id}
                           className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="Löschen"
+                          title="LÃ¶schen"
                         >
                           <Trash2 size={14} />
                         </button>
