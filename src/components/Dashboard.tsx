@@ -56,7 +56,7 @@ export default function Dashboard({ stats, contacts, deals, onNavigateToContacts
       border: 'border-purple-100',
     },
     {
-      title: {'Abschl\u00FCsse'},
+      title: 'Abschlüsse',
       value: stats.wonDeals,
       icon: CheckCircle,
       light: 'bg-emerald-50',
