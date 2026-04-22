@@ -8,14 +8,25 @@ interface Props {
   onSave: () => void
 }
 
+const STATUS_OPTIONS = [
+  { value: 'lead', label: 'Lead' },
+  { value: 'interessent', label: 'Interessent' },
+  { value: 'verhandlung', label: 'Verhandlung' },
+  { value: 'abschluss', label: 'Abschluss' },
+]
+
 export default function ContactModal({ contact, onClose, onSave }: Props) {
+  const c = contact as any
   const [formData, setFormData] = useState({
-    name: contact?.name || '',
-    email: contact?.email || '',
-    phone: contact?.phone || '',
-    company: contact?.company || '',
-    produkt: contact?.produkt || '',
-    startzeitpunkt: contact?.startzeitpunkt || '',
+    name: c?.name || '',
+    email: c?.email || '',
+    phone: c?.phone || '',
+    company: c?.company || '',
+    product: c?.product || c?.produkt || '',
+    price: c?.price || '',
+    status: c?.status || c?.pipeline_status || 'lead',
+    startzeitpunkt: c?.startzeitpunkt || '',
+    notes: c?.notes || '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -23,18 +34,45 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
     e.preventDefault()
     setSaving(true)
     try {
-      const existing: Contact[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
+      const existing: any[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
       if (contact?.id) {
-        const updated = existing.map(c => c.id === contact.id ? { ...c, ...formData } : c)
+        const updated = existing.map(x =>
+          x.id === contact.id
+            ? {
+                ...x,
+                name: formData.name,
+                email: formData.email,
+                phone: formData.phone,
+                company: formData.company,
+                product: formData.product,
+                produkt: formData.product,
+                price: formData.price ? Number(formData.price) : x.price,
+                status: formData.status,
+                pipeline_status: formData.status,
+                startzeitpunkt: formData.startzeitpunkt,
+                notes: formData.notes,
+                updated_at: new Date().toISOString(),
+              }
+            : x
+        )
         localStorage.setItem('crm_contacts', JSON.stringify(updated))
       } else {
-        const newContact: Contact = {
+        const newContact = {
           id: Math.random().toString(36).substr(2, 9),
-          ...formData,
-          status: 'lead',
-          pipeline_status: 'lead',
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          product: formData.product,
+          produkt: formData.product,
+          price: formData.price ? Number(formData.price) : 0,
+          status: formData.status,
+          pipeline_status: formData.status,
+          startzeitpunkt: formData.startzeitpunkt,
+          notes: formData.notes,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          source: 'manual',
         }
         existing.push(newContact)
         localStorage.setItem('crm_contacts', JSON.stringify(existing))
@@ -58,26 +96,22 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
             <X size={20} />
           </button>
         </div>
-
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder="VollstÃ¤ndiger Name"
+              placeholder={'Vollst\u00E4ndiger Name'}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
               value={formData.email}
@@ -88,9 +122,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Telefon
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
             <input
               type="tel"
               value={formData.phone}
@@ -101,9 +133,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Firma
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Firma</label>
             <input
               type="text"
               value={formData.company}
@@ -115,27 +145,52 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Produkt
+              {'Status / Phase'}
             </label>
-            <input
-              type="text"
-              value={formData.produkt}
-              onChange={e => setFormData({ ...formData, produkt: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder="z.B. ErklÃ¤rvideo"
-            />
+            <select
+              value={formData.status}
+              onChange={e => setFormData({ ...formData, status: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-white"
+            >
+              {STATUS_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Startzeitpunkt
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Produkt</label>
+            <select
+              value={formData.product}
+              onChange={e => setFormData({ ...formData, product: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-white"
+            >
+              <option value="">{'-- Produkt w\u00E4hlen --'}</option>
+              <option value={'Standard Erkl\u00E4rvideo'}>{'Standard Erkl\u00E4rvideo \u00B7 500\u20AC'}</option>
+              <option value="C3 3D Video">{'C3 3D Video \u00B7 850\u20AC'}</option>
+              <option value="Sonstiges">Sonstiges</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Startzeitpunkt</label>
             <input
               type="text"
               value={formData.startzeitpunkt}
               onChange={e => setFormData({ ...formData, startzeitpunkt: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
               placeholder="z.B. Innerhalb 2 Wochen"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notizen</label>
+            <textarea
+              value={formData.notes}
+              onChange={e => setFormData({ ...formData, notes: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 resize-none"
+              placeholder="Interne Notizen..."
             />
           </div>
 
