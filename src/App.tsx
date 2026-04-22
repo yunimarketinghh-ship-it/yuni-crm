@@ -13,7 +13,11 @@ import { Plus, LogOut, Upload } from 'lucide-react'
 type View = 'dashboard' | 'contacts' | 'pipeline' | 'activities'
 
 const loadLS = <T,>(key: string): T[] => {
-  try { return JSON.parse(localStorage.getItem(key) || '[]') } catch { return [] }
+  try {
+    return JSON.parse(localStorage.getItem(key) || '[]')
+  } catch {
+    return []
+  }
 }
 
 export default function App() {
@@ -28,12 +32,14 @@ export default function App() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const ok = localStorage.getItem('crm_auth') === 'true' || localStorage.getItem('yuni-crm-authenticated') === 'true'
+    const ok =
+      localStorage.getItem('crm_auth') === 'true' ||
+      localStorage.getItem('yuni-crm-authenticated') === 'true'
     setAuthenticated(ok)
   }, [])
 
   const fetchContacts = useCallback(() => {
-    setContacts([...loadLS<Contact>('crm_contacts')].reverse())
+    setContacts(loadLS<Contact>('crm_contacts'))
   }, [])
 
   const fetchDeals = useCallback(() => {
@@ -77,8 +83,12 @@ export default function App() {
     totalContacts: contacts.length,
     totalDeals: deals.length,
     wonDeals: deals.filter(d => d.stage === 'abschluss').length,
-    revenue: deals.filter(d => d.stage === 'abschluss').reduce((sum, d) => sum + (d.value || 0), 0),
-    activeLeads: contacts.filter(c => ['lead','interessent'].includes(c.status || c.pipeline_status || '')).length,
+    revenue: deals
+      .filter(d => d.stage === 'abschluss')
+      .reduce((sum, d) => sum + (d.value || 0), 0),
+    activeLeads: contacts.filter(c =>
+      ['lead', 'interessent'].includes(c.status || c.pipeline_status || '')
+    ).length,
     pipelineValue: deals.reduce((sum, d) => sum + (d.value || 0), 0),
   }
 
@@ -94,25 +104,36 @@ export default function App() {
                 <span className="text-white font-bold text-lg">Y</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 leading-none">YUNI CRM</h1>
+                <h1 className="text-xl font-bold text-gray-900 leading-none">YUNI CRM2</h1>
                 <p className="text-xs text-gray-500">Lead Management</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => { setSelectedContact(null); setShowContactModal(true) }} className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-1.5 text-sm font-medium transition-colors shadow-sm">
+              <button
+                onClick={() => { setSelectedContact(null); setShowContactModal(true) }}
+                className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-1.5 text-sm font-medium transition-colors shadow-sm"
+              >
                 <Plus size={16} /><span className="hidden sm:inline">Kontakt</span>
               </button>
-              <button onClick={() => setShowImportModal(true)} className="bg-emerald-600 text-white px-3 py-2 rounded-lg hover:bg-emerald-700 flex items-center gap-1.5 text-sm font-medium transition-colors shadow-sm">
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="bg-emerald-600 text-white px-3 py-2 rounded-lg hover:bg-emerald-700 flex items-center gap-1.5 text-sm font-medium transition-colors shadow-sm"
+              >
                 <Upload size={16} /><span className="hidden sm:inline">Import</span>
               </button>
-              <button onClick={handleLogout} className="text-gray-500 px-3 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-1.5 text-sm font-medium transition-colors">
+              <button
+                onClick={handleLogout}
+                className="text-gray-500 px-3 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-1.5 text-sm font-medium transition-colors"
+              >
                 <LogOut size={16} /><span className="hidden sm:inline">Abmelden</span>
               </button>
             </div>
           </div>
         </div>
       </header>
+
       <Navigation view={view} setView={setView} />
+
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
@@ -121,13 +142,32 @@ export default function App() {
           </div>
         ) : (
           <>
-            {view === 'dashboard' && <Dashboard stats={stats} contacts={contacts} deals={deals} activities={activities} />}
-            {view === 'contacts' && <ContactTable contacts={contacts} onSelectContact={handleSelectContact} onRefresh={fetchContacts} />}
-            {view === 'pipeline' && <KanbanBoard deals={deals} contacts={contacts} onRefresh={fetchDeals} />}
-            {view === 'activities' && <ActivityLog activities={activities} contacts={contacts} onRefresh={fetchActivities} />}
+            {view === 'dashboard' && (
+              <Dashboard
+                stats={stats}
+                contacts={contacts}
+                deals={deals}
+                activities={activities}
+                onNavigateToContacts={() => setView('contacts')}
+              />
+            )}
+            {view === 'contacts' && (
+              <ContactTable
+                contacts={contacts}
+                onSelectContact={handleSelectContact}
+                onRefresh={fetchContacts}
+              />
+            )}
+            {view === 'pipeline' && (
+              <KanbanBoard deals={deals} contacts={contacts} onRefresh={fetchDeals} />
+            )}
+            {view === 'activities' && (
+              <ActivityLog activities={activities} contacts={contacts} onRefresh={fetchActivities} />
+            )}
           </>
         )}
       </main>
+
       {showContactModal && (
         <ContactModal
           contact={selectedContact}
@@ -136,10 +176,7 @@ export default function App() {
         />
       )}
       {showImportModal && (
-        <ImportLeads
-          onClose={() => setShowImportModal(false)}
-          onComplete={fetchData}
-        />
+        <ImportLeads onClose={() => setShowImportModal(false)} onComplete={fetchData} />
       )}
     </div>
   )
