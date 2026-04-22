@@ -33,7 +33,7 @@ const stageLabels: Record<string, string> = {
   abschluss: 'Abschluss',
 }
 
-export default function Dashboard({ stats, contacts, deals, onNavigateToContacts }: Props) {
+export default function Dashboard({ stats, contacts, deals: _deals, onNavigateToContacts }: Props) {
   const recentContacts = [...contacts]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 6)
@@ -99,20 +99,20 @@ export default function Dashboard({ stats, contacts, deals, onNavigateToContacts
           <div className="flex items-center gap-2 mb-5">
             <TrendingUp size={18} className="text-indigo-600" />
             <h2 className="font-semibold text-gray-900">{'Pipeline \u00DCbersicht'}</h2>
-            <span className="ml-auto text-xs text-gray-400">{deals.length} Deals total</span>
+            <span className="ml-auto text-xs text-gray-400">{contacts.length} Kontakte</span>
           </div>
           <div className="space-y-4">
             {stageOrder.map(stage => {
-              const stageDeals = deals.filter(d => d.stage === stage)
-              const value = stageDeals.reduce((s, d) => s + (d.value || 0), 0)
-              const maxCount = Math.max(...stageOrder.map(s => deals.filter(d => d.stage === s).length), 1)
-              const pct = deals.length > 0 ? Math.round((stageDeals.length / maxCount) * 100) : 0
+              const stageContacts = contacts.filter(c => (c.status || (c as any).pipeline_status || '') === stage)
+              const value = stageContacts.reduce((s, c) => s + ((c as any).price || 0), 0)
+              const maxCount = Math.max(...stageOrder.map(s => contacts.filter(c => (c.status || (c as any).pipeline_status || '') === s).length), 1)
+              const pct = contacts.length > 0 ? Math.round((stageContacts.length / maxCount) * 100) : 0
               return (
                 <div key={stage}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="text-sm font-medium text-gray-700">{stageLabels[stage]}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-gray-400">{stageDeals.length} Deals</span>
+                      <span className="text-xs text-gray-400">{stageContacts.length} Kontakte</span>
                       <span className="text-xs font-bold text-gray-800">{(value / 1000).toFixed(1)}k{'\u20AC'}</span>
                     </div>
                   </div>
