@@ -1,7 +1,5 @@
 import { Contact, Deal, Activity } from '../lib/supabase'
 import { Users, TrendingUp, CheckCircle, DollarSign, ArrowUpRight, Clock, Target } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { de } from 'date-fns/locale'
 
 interface Stats {
   totalContacts: number
@@ -34,9 +32,8 @@ const stageLabels: Record<string, string> = {
   abschluss: 'Abschluss',
 }
 
-export default function Dashboard({ stats, contacts, deals, activities }: Props) {
+export default function Dashboard({ stats, contacts, deals }: Props) {
   const recentContacts = contacts.slice(0, 6)
-  const recentActivities = activities.slice(0, 5)
 
   const statCards = [
     {
