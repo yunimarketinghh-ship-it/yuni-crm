@@ -68,7 +68,7 @@ export default function KanbanBoard({ deals, contacts, onRefresh }: Props) {
 
   const deleteDeal = (dealId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('Deal wirklich lÃ¶schen?')) return
+    if (!confirm('Deal wirklich löschen?')) return
     const existing: Deal[] = JSON.parse(localStorage.getItem('crm_deals') || '[]')
     localStorage.setItem('crm_deals', JSON.stringify(existing.filter(d => d.id !== dealId)))
     onRefresh()
@@ -145,7 +145,7 @@ export default function KanbanBoard({ deals, contacts, onRefresh }: Props) {
                         <button
                           onClick={(e) => deleteDeal(deal.id, e)}
                           className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-red-500 transition-all flex-shrink-0 mt-0.5"
-                          title="Deal lÃ¶schen"
+                          title="Deal löschen"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -191,7 +191,7 @@ export default function KanbanBoard({ deals, contacts, onRefresh }: Props) {
                               ? 'text-gray-200 cursor-not-allowed'
                               : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'
                           }`}
-                          title={stageIdx < stages.length - 1 ? `${stageConfig[stages[stageIdx + 1]].label} â` : ''}
+                          title={stageIdx < stages.length - 1 ? `${stageConfig[stages[stageIdx + 1]].label} →` : ''}
                         >
                           <span>{stageIdx < stages.length - 1 ? stageConfig[stages[stageIdx + 1]].label : ''}</span>
                           <ChevronRight size={13} />
@@ -215,7 +215,7 @@ export default function KanbanBoard({ deals, contacts, onRefresh }: Props) {
                     />
                     <input
                       type="number"
-                      placeholder="Wert in â¬ (optional)"
+                      placeholder="Wert in →¬ (optional)"
                       value={newDeal.value}
                       onChange={e => setNewDeal({ ...newDeal, value: e.target.value })}
                       className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -242,7 +242,7 @@ export default function KanbanBoard({ deals, contacts, onRefresh }: Props) {
                         disabled={!newDeal.title.trim() || saving}
                         className="flex-1 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-semibold"
                       >
-                        {saving ? '...' : 'HinzufÃ¼gen'}
+                        {saving ? '...' : 'Hinzufügen'}
                       </button>
                     </div>
                   </div>
@@ -252,7 +252,7 @@ export default function KanbanBoard({ deals, contacts, onRefresh }: Props) {
                     className="w-full py-2.5 text-xs text-gray-400 hover:text-indigo-600 hover:bg-white border border-dashed border-gray-300 hover:border-indigo-400 rounded-lg transition-all flex items-center justify-center gap-1.5 font-medium"
                   >
                     <Plus size={13} />
-                    Deal hinzufÃ¼gen
+                    Deal hinzufügen
                   </button>
                 )}
               </div>
