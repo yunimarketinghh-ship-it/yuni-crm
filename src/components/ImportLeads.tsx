@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase, Contact } from '../lib/supabase'
+import { Contact } from '../lib/supabase'
 import { Upload, CheckCircle, AlertCircle, X } from 'lucide-react'
 
 interface ImportLeadsProps {
@@ -38,7 +38,7 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
 
   const getProductInfo = () => {
     if (productType === 'standard') {
-      return { name: 'Standard Erklärvideo', price: 500 }
+      return { name: 'Standard ErklÃ¤rvideo', price: 500 }
     } else {
       return { name: 'C3 3D Video', price: 850 }
     }
@@ -87,15 +87,14 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
           source: 'import',
         }
 
-        const { error } = await supabase
-          .from('contacts')
-          .insert([contact])
-
-        if (error) {
-          errors.push(`Zeile ${i + 2} (${email}): ${error.message}`)
-          failedCount++
-        } else {
+        try {
+          const existing: Contact[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
+          existing.push(contact)
+          localStorage.setItem('crm_contacts', JSON.stringify(existing))
           successCount++
+        } catch (err) {
+          errors.push(`Zeile ${i + 2} (${email}): Speicherfehler`)
+          failedCount++
         }
       }
 
@@ -130,8 +129,8 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
           </div>
 
           <div className="bg-gray-50 rounded p-4 mb-4">
-            <p className="text-green-700 font-semibold">✓ {result.success} Leads importiert</p>
-            {result.failed > 0 && <p className="text-red-700 font-semibold">✗ {result.failed} fehlgeschlagen</p>}
+            <p className="text-green-700 font-semibold">â {result.success} Leads importiert</p>
+            {result.failed > 0 && <p className="text-red-700 font-semibold">â {result.failed} fehlgeschlagen</p>}
           </div>
 
           {result.errors.length > 0 && (
@@ -139,7 +138,7 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
               <p className="text-sm font-semibold text-red-800 mb-2">Fehler:</p>
               <ul className="text-xs text-red-700 space-y-1">
                 {result.errors.map((err, idx) => (
-                  <li key={idx}>• {err}</li>
+                  <li key={idx}>â¢ {err}</li>
                 ))}
               </ul>
             </div>
@@ -179,8 +178,8 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
               onChange={(e) => setProductType(e.target.value as 'standard' | 'c3')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="standard">Standard Erklärvideo - 500€</option>
-              <option value="c3">C3 3D Video - 850€</option>
+              <option value="standard">Standard ErklÃ¤rvideo - 500â¬</option>
+              <option value="c3">C3 3D Video - 850â¬</option>
             </select>
           </div>
 
@@ -197,7 +196,7 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
               <label htmlFor="file-input" className="cursor-pointer">
                 <Upload size={24} className="mx-auto mb-2 text-gray-400" />
                 <p className="text-sm text-gray-600">
-                  {file ? file.name : 'CSV-Datei auswählen'}
+                  {file ? file.name : 'CSV-Datei auswÃ¤hlen'}
                 </p>
               </label>
             </div>
