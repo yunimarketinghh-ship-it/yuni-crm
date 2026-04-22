@@ -82,14 +82,14 @@ export default function App() {
   const stats = {
     totalContacts: contacts.length,
     totalDeals: deals.length,
-    wonDeals: deals.filter(d => d.stage === 'abschluss').length,
-    revenue: deals
-      .filter(d => d.stage === 'abschluss')
-      .reduce((sum, d) => sum + (d.value || 0), 0),
+    wonDeals: contacts.filter(c => (c.status || c.pipeline_status || '') === 'abschluss').length,
+    revenue: contacts
+      .filter(c => (c.status || c.pipeline_status || '') === 'abschluss')
+      .reduce((sum, c) => sum + ((c as any).price || 0), 0),
     activeLeads: contacts.filter(c =>
       ['lead', 'interessent'].includes(c.status || c.pipeline_status || '')
     ).length,
-    pipelineValue: deals.reduce((sum, d) => sum + (d.value || 0), 0),
+    pipelineValue: contacts.reduce((sum, c) => sum + ((c as any).price || 0), 0),
   }
 
   if (!authenticated) return <Login onLogin={handleLogin} />
