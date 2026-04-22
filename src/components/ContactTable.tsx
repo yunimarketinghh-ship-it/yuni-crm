@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Contact } from '../lib/supabase'
-import { Phone, Mail, Search, Filter, Trash2, Edit2, UserPlus, ArrowUp, ArrowDown } from 'lucide-react'
+import { Phone, Mail, Search, Filter, Trash2, Edit2, UserPlus, ArrowUp, ArrowDown, Download, Upload } from 'lucide-react'
 
 interface Props {
   contacts: Contact[]
@@ -59,6 +59,36 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
     onRefresh()
   }
 
+
+  const handleExport = () => {
+    const data = JSON.stringify(contacts, null, 2)
+    const blob = new Blob([data], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `yuni-crm-export-${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      try {
+        const imported = JSON.parse(ev.target?.result as string)
+        if (!Array.isArray(imported)) { alert('Ung\u00FCltiges Format'); return }
+        localStorage.setItem('crm_contacts', JSON.stringify(imported))
+        onRefresh()
+        e.target.value = ''
+      } catch {
+        alert('Fehler beim Importieren')
+      }
+    }
+    reader.readAsText(file)
+  }
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -87,6 +117,23 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
             <option value="abschluss">Abschluss</option>
           </select>
           <span className="text-sm text-gray-400 font-medium">{filtered.length} Kontakte</span>
+          <button
+            onClick={handleExport}
+            className="px-2.5 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-1.5 shadow-sm transition-colors"
+            title="Kontakte als JSON-Datei exportieren"
+          >
+            <Download size={14} />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+          <label
+            htmlFor="import-json-file"
+            className="px-2.5 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+            title="Kontakte aus JSON-Datei importieren"
+          >
+            <Upload size={14} />
+            <span className="hidden sm:inline">Import</span>
+          </label>
+          <input id="import-json-file" type="file" accept=".json" className="hidden" onChange={handleImportFile} />
         </div>
       </div>
 
