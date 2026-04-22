@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { Contact } from '../lib/supabase'
-import { Phone, Mail, Search, Filter, Trash2, Edit2, UserPlus } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { de } from 'date-fns/locale'
+import { Phone, Mail, Search, Filter, Trash2, Edit2, UserPlus, ArrowUp, ArrowDown } from 'lucide-react'
 
 interface Props {
   contacts: Contact[]
@@ -17,24 +15,43 @@ const statusColors: Record<string, string> = {
   abschluss: 'bg-green-100 text-green-700',
 }
 
+function formatDate(dateStr: string): string {
+  try {
+    return new Date(dateStr).toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  } catch {
+    return dateStr
+  }
+}
+
 export default function ContactTable({ contacts, onSelectContact, onRefresh }: Props) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [sortAsc, setSortAsc] = useState(false)
 
-  const filtered = contacts.filter(c => {
-    const matchSearch =
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
-      (c.company || '').toLowerCase().includes(search.toLowerCase())
-    const status = c.status || c.pipeline_status || 'lead'
-    const matchStatus = statusFilter === 'all' || status === statusFilter
-    return matchSearch && matchStatus
-  })
+  const filtered = contacts
+    .filter(c => {
+      const matchSearch =
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
+        (c.company || '').toLowerCase().includes(search.toLowerCase())
+      const status = c.status || c.pipeline_status || 'lead'
+      const matchStatus = statusFilter === 'all' || status === statusFilter
+      return matchSearch && matchStatus
+    })
+    .sort((a, b) => {
+      const da = new Date(a.created_at).getTime()
+      const db = new Date(b.created_at).getTime()
+      return sortAsc ? da - db : db - da
+    })
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('Kontakt wirklich lÃ¶schen?')) return
+    if (!confirm('Kontakt wirklich l\u00F7schen?')) return
     setDeleting(id)
     const existing: Contact[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
     localStorage.setItem('crm_contacts', JSON.stringify(existing.filter(x => x.id !== id)))
@@ -84,13 +101,26 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kontakt</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Produkt</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">HinzugefÃ¼gt</th>
+                <th
+                  className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-indigo-600 transition-colors"
+                  onClick={() => setSortAsc(!sortAsc)}
+                >
+                  <span className="flex items-center gap-1">
+                    {'Hinzugef\u00FCgt'}
+                    {sortAsc ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                  </span>
+                </th>
                 <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aktionen</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map(contact => {
                 const status = contact.status || contact.pipeline_status || 'lead'
+                const productName = (contact as any).product || (contact as any).produkt || ''
+                const price = (contact as any).price
+                const productDisplay = productName
+                  ? (price ? `${productName} \u00B7 ${price}\u20AC` : productName)
+                  : '\u2014'
                 return (
                   <tr
                     key={contact.id}
@@ -105,7 +135,7 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
                         <span className="font-semibold text-gray-900 text-sm">{contact.name}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-sm text-gray-500">{contact.company || 'â'}</td>
+                    <td className="px-5 py-4 text-sm text-gray-500">{contact.company || '\u2014'}</td>
                     <td className="px-5 py-4 text-sm">
                       <div className="flex flex-col gap-0.5">
                         {contact.email && (
@@ -133,13 +163,9 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
                         {status.charAt(0).toUpperCase() + status.slice(1)}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-sm text-gray-500">
-                      {(contact.product || contact.produkt)
-                        ? `${contact.product || contact.produkt}${contact.price ? ` Â· ${contact.price}â¬` : ''}`
-                        : 'â'}
-                    </td>
+                    <td className="px-5 py-4 text-sm text-gray-500">{productDisplay}</td>
                     <td className="px-5 py-4 text-sm text-gray-400">
-                      {formatDistanceToNow(new Date(contact.created_at), { addSuffix: true, locale: de })}
+                      {formatDate(contact.created_at)}
                     </td>
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
@@ -151,10 +177,10 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh }: P
                           <Edit2 size={14} />
                         </button>
                         <button
-                          onClick={(e) => handleDelete(contact.id, e)}
+                          onClick={e => handleDelete(contact.id, e)}
                           disabled={deleting === contact.id}
                           className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="LÃ¶schen"
+                          title={'L\u00F6schen'}
                         >
                           <Trash2 size={14} />
                         </button>
