@@ -38,8 +38,33 @@ export default function App() {
     setAuthenticated(ok)
   }, [])
 
-  const fetchContacts = useCallback(() => {
-    setContacts(loadLS<Contact>('crm_contacts'))
+  const fetchContacts = useCallback(async () => {
+    const local = loadLS<Contact>('crm_contacts')
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (!error && data && data.length > 0) {
+        const localIds = new Set(local.map(c => c.id))
+        const localEmails = new Set(local.map(c => c.email?.toLowerCase()).filter(Boolean))
+        const newFromSupabase = data
+          .filter(c => !localIds.has(c.id) && !(c.email && localEmails.has(c.email.toLowerCase())))
+          .map(c => ({
+            ...c,
+            status: c.pipeline_status || 'lead',
+            product: c.produkt || '',
+            price: (c as any).price || 0,
+          }))
+        if (newFromSupabase.length > 0) {
+          const merged = [...local, ...newFromSupabase]
+          localStorage.setItem('crm_contacts', JSON.stringify(merged))
+          setContacts(merged)
+          return
+        }
+      }
+    } catch (_) {}
+    setContacts(local)
   }, [])
 
   const fetchDeals = useCallback(() => {
@@ -50,9 +75,9 @@ export default function App() {
     setActivities([...loadLS<Activity>('crm_activities')].reverse().slice(0, 50))
   }, [])
 
-  const fetchData = useCallback(() => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
-    fetchContacts()
+    await fetchContacts()
     fetchDeals()
     fetchActivities()
     setLoading(false)
