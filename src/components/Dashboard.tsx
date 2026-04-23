@@ -25,9 +25,8 @@ const statusColors: Record<string, string> = {
   abschluss: 'bg-green-100 text-green-700',
 }
 
-const stageOrder = ['lead', 'interessent', 'verhandlung', 'abschluss']
+const stageOrder = ['interessent', 'verhandlung', 'abschluss']
 const stageLabels: Record<string, string> = {
-  lead: 'Lead',
   interessent: 'Interessent',
   verhandlung: 'Verhandlung',
   abschluss: 'Abschluss',
@@ -179,7 +178,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, onNavigateTo
           <p className="text-gray-400 text-sm text-center py-4">Noch keine Kontakte vorhanden</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {['lead', 'interessent', 'verhandlung', 'abschluss'].map(status => {
+            {['interessent', 'verhandlung', 'abschluss'].map(status => {
               const count = contacts.filter(c => (c.status || c.pipeline_status) === status).length
               const pct = Math.round((count / contacts.length) * 100)
               const colorMap: Record<string, string> = {
