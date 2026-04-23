@@ -15,6 +15,11 @@ const STATUS_OPTIONS = [
   { value: 'abschluss', label: 'Abschluss' },
 ]
 
+const PRODUCT_PRICES: Record<string, number> = {
+  'Standard Erklärvideo': 500,
+  'C3 3D Video': 850,
+}
+
 export default function ContactModal({ contact, onClose, onSave }: Props) {
   const c = contact as any
   const [formData, setFormData] = useState({
@@ -23,18 +28,28 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
     phone: c?.phone || '',
     company: c?.company || '',
     product: c?.product || c?.produkt || '',
-    price: c?.price || '',
+    price: String(c?.price || ''),
     status: c?.status || c?.pipeline_status || 'lead',
     startzeitpunkt: c?.startzeitpunkt || '',
     notes: c?.notes || '',
   })
   const [saving, setSaving] = useState(false)
 
+  const handleProductChange = (product: string) => {
+    const autoPrice = PRODUCT_PRICES[product]
+    setFormData(prev => ({
+      ...prev,
+      product,
+      price: autoPrice ? String(autoPrice) : (product === 'Sonstiges' ? prev.price : ''),
+    }))
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
     try {
       const existing: any[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
+      const price = formData.price ? Number(formData.price) : (PRODUCT_PRICES[formData.product] || 0)
       if (contact?.id) {
         const updated = existing.map(x =>
           x.id === contact.id
@@ -46,7 +61,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
                 company: formData.company,
                 product: formData.product,
                 produkt: formData.product,
-                price: formData.price ? Number(formData.price) : x.price,
+                price,
                 status: formData.status,
                 pipeline_status: formData.status,
                 startzeitpunkt: formData.startzeitpunkt,
@@ -65,7 +80,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
           company: formData.company,
           product: formData.product,
           produkt: formData.product,
-          price: formData.price ? Number(formData.price) : 0,
+          price,
           status: formData.status,
           pipeline_status: formData.status,
           startzeitpunkt: formData.startzeitpunkt,
@@ -85,6 +100,8 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
     }
   }
 
+  const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -96,62 +113,41 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
             <X size={20} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
 
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-            <input
-              type="text"
-              required
-              value={formData.name}
+            <input type="text" required value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder={'Vollst\u00E4ndiger Name'}
-            />
+              className={inputClass} placeholder="Vollständiger Name" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={formData.email}
+            <input type="email" value={formData.email}
               onChange={e => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder="email@example.com"
-            />
+              className={inputClass} placeholder="email@example.com" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
-            <input
-              type="tel"
-              value={formData.phone}
+            <input type="tel" value={formData.phone}
               onChange={e => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder="+49 123 456789"
-            />
+              className={inputClass} placeholder="+49 123 456789" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Firma</label>
-            <input
-              type="text"
-              value={formData.company}
+            <input type="text" value={formData.company}
               onChange={e => setFormData({ ...formData, company: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder="Firmenname"
-            />
+              className={inputClass} placeholder="Firmenname" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {'Status / Phase'}
-            </label>
-            <select
-              value={formData.status}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status / Phase</label>
+            <select value={formData.status}
               onChange={e => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-white"
-            >
+              className={inputClass + ' bg-white'}>
               {STATUS_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -160,53 +156,53 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Produkt</label>
-            <select
-              value={formData.product}
-              onChange={e => setFormData({ ...formData, product: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-white"
-            >
-              <option value="">{'-- Produkt w\u00E4hlen --'}</option>
-              <option value={'Standard Erkl\u00E4rvideo'}>{'Standard Erkl\u00E4rvideo \u00B7 500\u20AC'}</option>
-              <option value="C3 3D Video">{'C3 3D Video \u00B7 850\u20AC'}</option>
+            <select value={formData.product} onChange={e => handleProductChange(e.target.value)}
+              className={inputClass + ' bg-white'}>
+              <option value="">{'-- Produkt wählen --'}</option>
+              <option value="Standard Erklärvideo">{'Standard Erklärvideo · 500€'}</option>
+              <option value="C3 3D Video">{'C3 3D Video · 850€'}</option>
               <option value="Sonstiges">Sonstiges</option>
             </select>
           </div>
 
+          {formData.product === 'Sonstiges' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Umsatz (€)
+              </label>
+              <input
+                type="number"
+                value={formData.price}
+                onChange={e => setFormData({ ...formData, price: e.target.value })}
+                className={inputClass}
+                placeholder="z.B. 1200"
+                min="0"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Startzeitpunkt</label>
-            <input
-              type="text"
-              value={formData.startzeitpunkt}
+            <input type="text" value={formData.startzeitpunkt}
               onChange={e => setFormData({ ...formData, startzeitpunkt: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder="z.B. Innerhalb 2 Wochen"
-            />
+              className={inputClass} placeholder="z.B. Innerhalb 2 Wochen" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Notizen</label>
-            <textarea
-              value={formData.notes}
+            <textarea value={formData.notes}
               onChange={e => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 resize-none"
-              placeholder="Interne Notizen..."
-            />
+              rows={3} className={inputClass + ' resize-none'}
+              placeholder="Interne Notizen..." />
           </div>
 
           <div className="flex gap-2 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
-            >
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50">
               Abbrechen
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
-            >
+            <button type="submit" disabled={saving}
+              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50">
               {saving ? 'Speichert...' : 'Speichern'}
             </button>
           </div>
