@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Contact, Deal, Activity } from './lib/supabase'
+import { supabase, Contact, Deal, Activity } from './lib/supabase'
 import Navigation from './components/Navigation'
 import Dashboard from './components/Dashboard'
 import ContactTable from './components/ContactTable'
