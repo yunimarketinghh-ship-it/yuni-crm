@@ -9,7 +9,7 @@ interface Props {
   onSelectContact: (contact: Contact) => void
 }
 
-const stages = ['lead', 'interessent', 'verhandlung', 'abschluss']
+const stages = ['interessent', 'verhandlung', 'abschluss']
 
 const stageConfig: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
   lead: { label: 'Lead', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-400' },
