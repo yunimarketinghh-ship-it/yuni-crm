@@ -159,7 +159,7 @@ export default function App() {
               />
             )}
             {view === 'pipeline' && (
-              <KanbanBoard deals={deals} contacts={contacts} onRefresh={fetchDeals} />
+              <KanbanBoard deals={deals} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} />
             )}
             {view === 'activities' && (
               <ActivityLog activities={activities} contacts={contacts} onRefresh={fetchActivities} />
