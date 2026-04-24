@@ -20,6 +20,15 @@ const loadLS = <T,>(key: string): T[] => {
   }
 }
 
+const extractCompanyFromEmail = (email: string | null | undefined): string => {
+  if (!email) return ''
+  const domain = (email.split('@')[1] || '').toLowerCase()
+  const domainName = domain.split('.').slice(0, -1).join('.')
+  const generic = ['gmail','yahoo','hotmail','outlook','gmx','t-online','web','icloud','aol','live','freenet','ionos','googlemail']
+  if (!domainName || generic.includes(domainName)) return ''
+  return domainName.split(/[-.]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+}
+
 export default function App() {
   const [authenticated, setAuthenticated] = useState(false)
   const [view, setView] = useState<View>('dashboard')
@@ -32,14 +41,12 @@ export default function App() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const ok =
-      localStorage.getItem('crm_auth') === 'true' ||
-      localStorage.getItem('yuni-crm-authenticated') === 'true'
+    const ok = localStorage.getItem('crm_auth') === 'true' || localStorage.getItem('yuni-crm-authenticated') === 'true'
     setAuthenticated(ok)
   }, [])
 
   const fetchContacts = useCallback(async () => {
-    const local = loadLS<Contact>('crm_contacts')
+    const local = loadLS<Contact>('crm_contacts').map(c => ({ ...c, company: c.company || extractCompanyFromEmail(c.email) }))
     try {
       const { data, error } = await supabase
         .from('contacts')
@@ -55,6 +62,7 @@ export default function App() {
             status: c.pipeline_status || 'lead',
             product: c.produkt || '',
             price: (c as any).price || 0,
+            company: c.company || extractCompanyFromEmail(c.email),
           }))
         if (newFromSupabase.length > 0) {
           const merged = [...local, ...newFromSupabase]
@@ -168,20 +176,10 @@ export default function App() {
         ) : (
           <>
             {view === 'dashboard' && (
-              <Dashboard
-                stats={stats}
-                contacts={contacts}
-                deals={deals}
-                activities={activities}
-                onNavigateToContacts={() => setView('contacts')}
-              />
+              <Dashboard stats={stats} contacts={contacts} deals={deals} activities={activities} onNavigateToContacts={() => setView('contacts')} />
             )}
             {view === 'contacts' && (
-              <ContactTable
-                contacts={contacts}
-                onSelectContact={handleSelectContact}
-                onRefresh={fetchContacts}
-              />
+              <ContactTable contacts={contacts} onSelectContact={handleSelectContact} onRefresh={fetchContacts} />
             )}
             {view === 'pipeline' && (
               <KanbanBoard deals={deals} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} />
