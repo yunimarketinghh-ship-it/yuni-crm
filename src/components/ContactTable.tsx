@@ -1,258 +1,253 @@
 import { useState } from 'react'
-import { Contact } from '../lib/supabase'
-import { Phone, Mail, Search, Filter, Trash2, Edit2, UserPlus, ArrowUp, ArrowDown, Download, Upload } from 'lucide-react'
+import { Contact, Profile } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
+import AssignModal from './AssignModal'
+import { Search, UserPlus, Trash2, ChevronDown } from 'lucide-react'
 
-interface Props {
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-gray-100 text-gray-700' },
+  lead:              { label: 'Lead',               color: 'bg-blue-100 text-blue-700' },
+  interessent:       { label: 'Interessent',        color: 'bg-indigo-100 text-indigo-700' },
+  verhandlung:       { label: 'Verhandlung',        color: 'bg-yellow-100 text-yellow-700' },
+  abschluss:         { label: 'Abschluss',          color: 'bg-green-100 text-green-700' },
+  verloren:          { label: 'Verloren',           color: 'bg-red-100 text-red-700' },
+}
+
+type Props = {
   contacts: Contact[]
   onSelectContact: (contact: Contact) => void
   onRefresh: () => void
+  salesReps: Profile[]
 }
 
-const statusColors: Record<string, string> = {
-  lead: 'bg-blue-100 text-blue-700',
-  interessent: 'bg-purple-100 text-purple-700',
-  verhandlung: 'bg-amber-100 text-amber-700',
-  abschluss: 'bg-green-100 text-green-700',
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return new Date(dateStr).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-  } catch {
-    return dateStr
-  }
-}
-
-export default function ContactTable({ contacts, onSelectContact, onRefresh }: Props) {
+export default function ContactTable({ contacts, onSelectContact, onRefresh, salesReps }: Props) {
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [deleting, setDeleting] = useState<string | null>(null)
-  const [sortAsc, setSortAsc] = useState(false)
+  const [filterStatus, setFilterStatus] = useState('alle')
+  const [filterRep, setFilterRep] = useState('alle')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [showAssign, setShowAssign] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
-  const filtered = contacts
-    .filter(c => {
-      const matchSearch =
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
-        (c.company || '').toLowerCase().includes(search.toLowerCase())
-      const status = c.status || c.pipeline_status || 'lead'
-      const matchStatus = statusFilter === 'all' || status === statusFilter
-      return matchSearch && matchStatus
-    })
-    .sort((a, b) => {
-      const da = new Date(a.created_at).getTime()
-      const db = new Date(b.created_at).getTime()
-      return sortAsc ? da - db : db - da
-    })
+  const filtered = contacts.filter(c => {
+    const matchSearch = !search ||
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.company || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.phone || '').includes(search)
+    const matchStatus = filterStatus === 'alle' || (c.pipeline_status || '') === filterStatus
+    const matchRep = filterRep === 'alle'
+      ? true
+      : filterRep === 'unassigned'
+      ? !c.assigned_to
+      : c.assigned_to === filterRep
+    return matchSearch && matchStatus && matchRep
+  })
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!confirm('Kontakt wirklich l\u00F7schen?')) return
-    setDeleting(id)
-    const existing: Contact[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
-    localStorage.setItem('crm_contacts', JSON.stringify(existing.filter(x => x.id !== id)))
-    setDeleting(null)
-    onRefresh()
-  }
+  const allSelected = filtered.length > 0 && filtered.every(c => selected.has(c.id))
 
-
-  const handleExport = () => {
-    const data = JSON.stringify(contacts, null, 2)
-    const blob = new Blob([data], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `yuni-crm-export-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => {
-      try {
-        const imported = JSON.parse(ev.target?.result as string)
-        if (!Array.isArray(imported)) { alert('Ung\u00FCltiges Format'); return }
-        localStorage.setItem('crm_contacts', JSON.stringify(imported))
-        onRefresh()
-        e.target.value = ''
-      } catch {
-        alert('Fehler beim Importieren')
-      }
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filtered.map(c => c.id)))
     }
-    reader.readAsText(file)
+  }
+
+  const toggleOne = (id: string) => {
+    const next = new Set(selected)
+    next.has(id) ? next.delete(id) : next.add(id)
+    setSelected(next)
+  }
+
+  const selectedContacts = contacts.filter(c => selected.has(c.id))
+
+  const handleDelete = async () => {
+    if (!selected.size) return
+    if (!confirm(`${selected.size} Kontakt(e) wirklich lÃ¶schen?`)) return
+    setDeleting(true)
+    await supabase.from('contacts').delete().in('id', Array.from(selected))
+    setSelected(new Set())
+    onRefresh()
+    setDeleting(false)
+  }
+
+  const repName = (id: string | null) => {
+    if (!id) return 'â'
+    return salesReps.find(r => r.id === id)?.name || 'Unbekannt'
   }
 
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
-            type="text"
-            placeholder="Name, Email oder Firma suchen..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+            placeholder="Name, E-Mail, Telefon oder Firma..."
+            className="w-full border border-gray-300 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter size={15} className="text-gray-400" />
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
-          >
-            <option value="all">Alle Status</option>
-            <option value="lead">Lead</option>
-            <option value="interessent">Interessent</option>
-            <option value="verhandlung">Verhandlung</option>
-            <option value="abschluss">Abschluss</option>
-          </select>
-          <span className="text-sm text-gray-400 font-medium">{filtered.length} Kontakte</span>
-          <button
-            onClick={handleExport}
-            className="px-2.5 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-1.5 shadow-sm transition-colors"
-            title="Kontakte als JSON-Datei exportieren"
-          >
-            <Download size={14} />
-            <span className="hidden sm:inline">Export</span>
-          </button>
-          <label
-            htmlFor="import-json-file"
-            className="px-2.5 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
-            title="Kontakte aus JSON-Datei importieren"
-          >
-            <Upload size={14} />
-            <span className="hidden sm:inline">Import</span>
-          </label>
-          <input id="import-json-file" type="file" accept=".json" className="hidden" onChange={handleImportFile} />
+
+        <div className="flex gap-2 flex-wrap">
+          <div className="relative">
+            <select
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
+              className="appearance-none border border-gray-300 rounded-lg pl-3 pr-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            >
+              <option value="alle">Alle Status</option>
+              {Object.entries(STATUS_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          <div className="relative">
+            <select
+              value={filterRep}
+              onChange={e => setFilterRep(e.target.value)}
+              className="appearance-none border border-gray-300 rounded-lg pl-3 pr-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            >
+              <option value="alle">Alle Vertriebler</option>
+              <option value="unassigned">Nicht zugewiesen</option>
+              {salesReps.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
         </div>
       </div>
 
+      {/* Bulk actions */}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5">
+          <span className="text-sm font-medium text-indigo-700">{selected.size} ausgewÃ¤hlt</span>
+          <button
+            onClick={() => setShowAssign(true)}
+            className="flex items-center gap-1.5 bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <UserPlus size={14} /> Zuweisen
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex items-center gap-1.5 bg-red-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+          >
+            <Trash2 size={14} /> LÃ¶schen
+          </button>
+          <button
+            onClick={() => setSelected(new Set())}
+            className="text-sm text-indigo-500 hover:text-indigo-700 ml-auto"
+          >
+            Auswahl aufheben
+          </button>
+        </div>
+      )}
+
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Firma</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kontakt</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Produkt</th>
-                <th
-                  className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-indigo-600 transition-colors"
-                  onClick={() => setSortAsc(!sortAsc)}
-                >
-                  <span className="flex items-center gap-1">
-                    {'Hinzugef\u00FCgt'}
-                    {sortAsc ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-                  </span>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="px-4 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
                 </th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aktionen</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Name</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden md:table-cell">Firma</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden lg:table-cell">Telefon</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden sm:table-cell">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden xl:table-cell">Vertriebler</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden xl:table-cell">Quelle</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden lg:table-cell">Erstellt</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filtered.map(contact => {
-                const status = contact.status || contact.pipeline_status || 'lead'
-                const productName = (contact as any).product || (contact as any).produkt || ''
-                const price = (contact as any).price
-                const productDisplay = productName
-                  ? (price ? `${productName} \u00B7 ${price}\u20AC` : productName)
-                  : '\u2014'
-                return (
-                  <tr
-                    key={contact.id}
-                    className="hover:bg-indigo-50/30 transition-colors cursor-pointer"
-                    onClick={() => onSelectContact(contact)}
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
-                          {contact.name.charAt(0).toUpperCase()}
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-16 text-center text-gray-400 italic">
+                    Keine Kontakte gefunden.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map(contact => {
+                  const st = STATUS_LABELS[contact.pipeline_status || ''] || STATUS_LABELS.nicht_kontaktiert
+                  return (
+                    <tr
+                      key={contact.id}
+                      className={`hover:bg-gray-50 transition-colors ${selected.has(contact.id) ? 'bg-indigo-50' : ''}`}
+                    >
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(contact.id)}
+                          onChange={() => toggleOne(contact.id)}
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                      </td>
+                      <td
+                        className="px-4 py-3 cursor-pointer"
+                        onClick={() => onSelectContact(contact)}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white font-bold text-xs">{contact.name.charAt(0).toUpperCase()}</span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{contact.name}</p>
+                            {contact.email && <p className="text-xs text-gray-400">{contact.email}</p>}
+                          </div>
                         </div>
-                        <span className="font-semibold text-gray-900 text-sm">{contact.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-gray-500">{contact.company || '\u2014'}</td>
-                    <td className="px-5 py-4 text-sm">
-                      <div className="flex flex-col gap-0.5">
-                        {contact.email && (
-                          <a
-                            href={`mailto:${contact.email}`}
-                            onClick={e => e.stopPropagation()}
-                            className="text-indigo-600 hover:underline flex items-center gap-1 text-xs"
-                          >
-                            <Mail size={11} /> {contact.email}
-                          </a>
-                        )}
-                        {contact.phone && (
-                          <a
-                            href={`tel:${contact.phone}`}
-                            onClick={e => e.stopPropagation()}
-                            className="text-indigo-600 hover:underline flex items-center gap-1 text-xs"
-                          >
-                            <Phone size={11} /> {contact.phone}
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${statusColors[status] || 'bg-gray-100 text-gray-600'}`}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-gray-500">{productDisplay}</td>
-                    <td className="px-5 py-4 text-sm text-gray-400">
-                      {formatDate(contact.created_at)}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
-                        <button
-                          onClick={() => onSelectContact(contact)}
-                          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="Bearbeiten"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={e => handleDelete(contact.id, e)}
-                          disabled={deleting === contact.id}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          title={'L\u00F6schen'}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 hidden md:table-cell">
+                        {contact.company || 'â'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 hidden lg:table-cell">
+                        {contact.phone || 'â'}
+                      </td>
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${st.color}`}>
+                          {st.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 hidden xl:table-cell">
+                        {repName(contact.assigned_to)}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs hidden xl:table-cell capitalize">
+                        {contact.source || 'â'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">
+                        {new Date(contact.created_at).toLocaleDateString('de-DE')}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <UserPlus className="mx-auto text-gray-200 mb-3" size={48} />
-            <p className="text-gray-500 font-semibold">
-              {search || statusFilter !== 'all' ? 'Keine Kontakte gefunden' : 'Noch keine Kontakte'}
-            </p>
-            <p className="text-gray-400 text-sm mt-1">
-              {search || statusFilter !== 'all'
-                ? 'Suchkriterien anpassen'
-                : 'Klicke auf "Kontakt" oben rechts, um loszulegen'}
-            </p>
-          </div>
-        )}
+
+        <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">
+          {filtered.length} von {contacts.length} Kontakten
+        </div>
       </div>
+
+      {showAssign && (
+        <AssignModal
+          contacts={selectedContacts}
+          onClose={() => setShowAssign(false)}
+          onDone={() => { setSelected(new Set()); onRefresh() }}
+        />
+      )}
     </div>
   )
 }
