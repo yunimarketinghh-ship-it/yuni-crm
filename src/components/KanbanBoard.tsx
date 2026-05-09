@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Deal, Contact } from '../lib/supabase'
+import { supabase, Deal, Contact } from '../lib/supabase'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Props {
@@ -10,7 +10,6 @@ interface Props {
 }
 
 const stages = ['interessent', 'verhandlung', 'abschluss']
-
 const stageConfig: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
   lead: { label: 'Lead', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-400' },
   interessent: { label: 'Interessent', color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', dot: 'bg-purple-400' },
@@ -21,16 +20,16 @@ const stageConfig: Record<string, { label: string; color: string; bg: string; bo
 export default function KanbanBoard({ deals: _deals, contacts, onRefresh, onSelectContact }: Props) {
   const [movingId, setMovingId] = useState<string | null>(null)
 
-  const moveContact = (contact: Contact, direction: 'left' | 'right', e: React.MouseEvent) => {
+  const moveContact = async (contact: Contact, direction: 'left' | 'right', e: React.MouseEvent) => {
     e.stopPropagation()
-    const currentIdx = stages.indexOf(contact.status || 'lead')
+    const currentIdx = stages.indexOf(contact.pipeline_status || 'lead')
     const newIdx = direction === 'right' ? currentIdx + 1 : currentIdx - 1
     if (newIdx < 0 || newIdx >= stages.length) return
     setMovingId(contact.id)
-    const existing: Contact[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
-    localStorage.setItem('crm_contacts', JSON.stringify(
-      existing.map(c => c.id === contact.id ? { ...c, status: stages[newIdx] } : c)
-    ))
+    await supabase
+      .from('contacts')
+      .update({ pipeline_status: stages[newIdx] })
+      .eq('id', contact.id)
     setTimeout(() => { setMovingId(null); onRefresh() }, 150)
   }
 
@@ -39,10 +38,9 @@ export default function KanbanBoard({ deals: _deals, contacts, onRefresh, onSele
       <div className="flex gap-4 min-w-min">
         {stages.map(stage => {
           const cfg = stageConfig[stage]
-          const stageContacts = contacts.filter(c => (c.status || 'lead') === stage)
-          const totalValue = stageContacts.reduce((sum, c) => sum + ((c as any).price || 0), 0)
+          const stageContacts = contacts.filter(c => (c.pipeline_status || 'lead') === stage)
+          const totalValue = stageContacts.reduce((sum, c) => sum + (c.price || 0), 0)
           const stageIdx = stages.indexOf(stage)
-
           return (
             <div key={stage} className="flex-shrink-0 w-72 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden flex flex-col shadow-sm">
               <div className={`${cfg.bg} ${cfg.border} border-b p-4`}>
@@ -61,10 +59,9 @@ export default function KanbanBoard({ deals: _deals, contacts, onRefresh, onSele
                   </span>
                 </div>
               </div>
-
               <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ maxHeight: '520px' }}>
                 {stageContacts.map(contact => {
-                  const price = (contact as any).price
+                  const price = contact.price
                   return (
                     <div
                       key={contact.id}
@@ -80,17 +77,14 @@ export default function KanbanBoard({ deals: _deals, contacts, onRefresh, onSele
                           {contact.company && <p className="text-xs text-gray-400 truncate">{contact.company}</p>}
                         </div>
                       </div>
-
-                      {(contact as any).product && (
-                        <div className="mt-2 text-xs text-gray-500 truncate">{(contact as any).product}</div>
+                      {contact.produkt && (
+                        <div className="mt-2 text-xs text-gray-500 truncate">{contact.produkt}</div>
                       )}
-
-                      {price > 0 && (
+                      {price != null && price > 0 && (
                         <div className="mt-1.5 text-xs font-bold text-indigo-600">
                           {price.toLocaleString('de-DE')} €
                         </div>
                       )}
-
                       <div className="flex items-center gap-1 mt-2.5 pt-2.5 border-t border-gray-100">
                         <button
                           onClick={e => moveContact(contact, 'left', e)}
@@ -117,7 +111,6 @@ export default function KanbanBoard({ deals: _deals, contacts, onRefresh, onSele
                     </div>
                   )
                 })}
-
                 {stageContacts.length === 0 && (
                   <div className="text-center py-8 text-gray-300 text-xs">Keine Kontakte</div>
                 )}
