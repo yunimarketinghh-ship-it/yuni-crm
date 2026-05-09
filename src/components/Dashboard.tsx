@@ -64,7 +64,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, onNavigateTo
     },
     {
       title: 'Pipeline-Wert',
-      value: `${(stats.pipelineValue / 1000).toFixed(1)}k\u20AC`,
+      value: `${(stats.pipelineValue / 1000).toFixed(1)}k€`,
       icon: DollarSign,
       light: 'bg-amber-50',
       text: 'text-amber-600',
@@ -97,14 +97,14 @@ export default function Dashboard({ stats, contacts, deals: _deals, onNavigateTo
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-5">
             <TrendingUp size={18} className="text-indigo-600" />
-            <h2 className="font-semibold text-gray-900">{'Pipeline \u00DCbersicht'}</h2>
+            <h2 className="font-semibold text-gray-900">{'Pipeline Übersicht'}</h2>
             <span className="ml-auto text-xs text-gray-400">{contacts.length} Kontakte</span>
           </div>
           <div className="space-y-4">
             {stageOrder.map(stage => {
-              const stageContacts = contacts.filter(c => (c.status || (c as any).pipeline_status || '') === stage)
-              const value = stageContacts.reduce((s, c) => s + ((c as any).price || 0), 0)
-              const maxCount = Math.max(...stageOrder.map(s => contacts.filter(c => (c.status || (c as any).pipeline_status || '') === s).length), 1)
+              const stageContacts = contacts.filter(c => (c.pipeline_status || '') === stage)
+              const value = stageContacts.reduce((s, c) => s + (c.price || 0), 0)
+              const maxCount = Math.max(...stageOrder.map(s => contacts.filter(c => (c.pipeline_status || '') === s).length), 1)
               const pct = contacts.length > 0 ? Math.round((stageContacts.length / maxCount) * 100) : 0
               return (
                 <div key={stage}>
@@ -112,7 +112,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, onNavigateTo
                     <span className="text-sm font-medium text-gray-700">{stageLabels[stage]}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-gray-400">{stageContacts.length} Kontakte</span>
-                      <span className="text-xs font-bold text-gray-800">{(value / 1000).toFixed(1)}k{'\u20AC'}</span>
+                      <span className="text-xs font-bold text-gray-800">{(value / 1000).toFixed(1)}k{'€'}</span>
                     </div>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -141,7 +141,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, onNavigateTo
           ) : (
             <div className="space-y-3">
               {recentContacts.map(contact => {
-                const status = contact.status || contact.pipeline_status || 'lead'
+                const status = contact.pipeline_status || 'lead'
                 return (
                   <div
                     key={contact.id}
@@ -154,7 +154,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, onNavigateTo
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900 leading-none">{contact.name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{contact.company || contact.email || '\u2014'}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{contact.company || contact.email || '—'}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -179,7 +179,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, onNavigateTo
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {['interessent', 'verhandlung', 'abschluss'].map(status => {
-              const count = contacts.filter(c => (c.status || c.pipeline_status) === status).length
+              const count = contacts.filter(c => c.pipeline_status === status).length
               const pct = Math.round((count / contacts.length) * 100)
               const colorMap: Record<string, string> = {
                 lead: 'bg-blue-50 border-blue-100',
