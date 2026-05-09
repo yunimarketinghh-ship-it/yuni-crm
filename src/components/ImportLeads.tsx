@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Contact } from '../lib/supabase'
+import { Contact, supabase } from '../lib/supabase'
 import { Upload, CheckCircle, AlertCircle, X } from 'lucide-react'
 
 interface ImportLeadsProps {
@@ -23,7 +23,6 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
     const lines = text.split('\n')
     const headers = lines[0].split('\t').map(h => h.trim().toLowerCase())
     const rows = []
-
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue
       const values = lines[i].split('\t').map(v => v.trim().replace(/^"|"$/g, ''))
@@ -38,7 +37,7 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
 
   const getProductInfo = () => {
     if (productType === 'standard') {
-      return { name: 'Standard ErklÃ¤rvideo', price: 500 }
+      return { name: 'Standard Erklaervideo', price: 500 }
     } else {
       return { name: 'C3 3D Video', price: 850 }
     }
@@ -46,7 +45,6 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
 
   const handleImport = async () => {
     if (!file) return
-
     setLoading(true)
     const errors: string[] = []
     let successCount = 0
@@ -59,8 +57,6 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i]
-
-        // Map column names (flexible for different CSV formats)
         const email = row['e-mail-adresse'] || row['email'] || row['e-mail']
         const name = row['vorname'] || row['name'] || row['firstname']
         const company = row['name_des_unternehmens'] || row['firma'] || row['company']
@@ -74,26 +70,31 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
         }
 
         const contact: Contact = {
-          id: Math.random().toString(36),
+          id: crypto.randomUUID(),
           email,
           name,
-          phone: phone || '',
-          company: company || '',
-          product: productInfo.name,
+          phone: phone || null,
+          company: company || null,
+          address: null,
+          tags: null,
+          produkt: productInfo.name,
           price: productInfo.price,
-          status: statusMap,
+          pipeline_status: statusMap,
+          startzeitpunkt: null,
+          verwendungszweck: null,
+          lead_date: null,
+          notes: null,
+          assigned_to: null,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
           source: 'import',
         }
 
         try {
-          const existing: Contact[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
-          existing.push(contact)
-          localStorage.setItem('crm_contacts', JSON.stringify(existing))
+          const { error } = await supabase.from('contacts').insert(contact)
+          if (error) throw error
           successCount++
         } catch (err) {
-          errors.push(`Zeile ${i + 2} (${email}): Speicherfehler`)
+          errors.push(`Zeile ${i + 2} (${email}): ${err instanceof Error ? err.message : 'Fehler'}`)
           failedCount++
         }
       }
@@ -127,29 +128,23 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
               </>
             )}
           </div>
-
           <div className="bg-gray-50 rounded p-4 mb-4">
-            <p className="text-green-700 font-semibold">â {result.success} Leads importiert</p>
-            {result.failed > 0 && <p className="text-red-700 font-semibold">â {result.failed} fehlgeschlagen</p>}
+            <p className="text-green-700 font-semibold">Erfolg: {result.success} Leads importiert</p>
+            {result.failed > 0 && <p className="text-red-700 font-semibold">Fehler: {result.failed} fehlgeschlagen</p>}
           </div>
-
           {result.errors.length > 0 && (
             <div className="bg-red-50 rounded p-3 mb-4">
               <p className="text-sm font-semibold text-red-800 mb-2">Fehler:</p>
               <ul className="text-xs text-red-700 space-y-1">
                 {result.errors.map((err, idx) => (
-                  <li key={idx}>â¢ {err}</li>
+                  <li key={idx}>{err}</li>
                 ))}
               </ul>
             </div>
           )}
-
           <div className="flex gap-2">
             <button
-              onClick={() => {
-                onComplete()
-                onClose()
-              }}
+              onClick={() => { onComplete(); onClose() }}
               className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
             >
               Abgeschlossen
@@ -169,7 +164,6 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
             <X size={24} />
           </button>
         </div>
-
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Produkttyp</label>
@@ -178,11 +172,10 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
               onChange={(e) => setProductType(e.target.value as 'standard' | 'c3')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="standard">Standard ErklÃ¤rvideo - 500â¬</option>
-              <option value="c3">C3 3D Video - 850â¬</option>
+              <option value="standard">Standard Erklaervideo - 500 EUR</option>
+              <option value="c3">C3 3D Video - 850 EUR</option>
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">CSV-Datei</label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
@@ -196,17 +189,15 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
               <label htmlFor="file-input" className="cursor-pointer">
                 <Upload size={24} className="mx-auto mb-2 text-gray-400" />
                 <p className="text-sm text-gray-600">
-                  {file ? file.name : 'CSV-Datei auswÃ¤hlen'}
+                  {file ? file.name : 'CSV-Datei auswaehlen'}
                 </p>
               </label>
             </div>
           </div>
-
           <div className="bg-blue-50 rounded p-3 text-xs text-blue-800">
             <p className="font-semibold mb-1">CSV-Format erforderlich:</p>
             <p>Spalten: Email, Vorname, Firma, Telefon, Status</p>
           </div>
-
           <div className="flex gap-2">
             <button
               onClick={onClose}
