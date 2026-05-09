@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase, Contact, Deal, Activity, Profile } from './lib/supabase'
-import Navigation from './components/Navigation'
 import Dashboard from './components/Dashboard'
 import ContactTable from './components/ContactTable'
 import KanbanBoard from './components/KanbanBoard'
@@ -14,16 +13,11 @@ import { Plus, LogOut, Upload, Users } from 'lucide-react'
 
 type View = 'dashboard' | 'contacts' | 'pipeline' | 'activities' | 'team'
 
-// ── Admin: Vertriebler verwalten ─────────────────────────────────────────────
+// ─── Admin: Vertriebler verwalten ────────────────────────────────────────────
 function TeamView() {
   const [members, setMembers] = useState<Profile[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteName, setInviteName] = useState('')
-  const [invitePassword, setInvitePassword] = useState('')
-  const [inviting, setInviting] = useState(false)
-  const [msg, setMsg] = useState('')
 
   useEffect(() => {
     fetchData()
@@ -38,24 +32,6 @@ function TeamView() {
     setMembers(profilesRes.data || [])
     setContacts(contactsRes.data || [])
     setLoading(false)
-  }
-
-  const handleInvite = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setInviting(true)
-    setMsg('')
-
-    // Vertriebler-Account via Supabase Admin anlegen
-    const { data, error } = await supabase.auth.admin
-      ? // Direkt über Admin API (nur mit Service-Role Key möglich)
-        { data: null, error: new Error('Nutze den Supabase-Bereich, um Vertriebler anzulegen.') }
-      : { data: null, error: new Error('Nutze den Supabase-Bereich, um Vertriebler anzulegen.') }
-
-    if (error) {
-      // Fallback: Anleitung zeigen
-      setMsg(`ℹ️ Vertriebler-Konto anlegen: Gehe zu Supabase → Authentication → Users → "Add user" → E-Mail: ${inviteEmail}, Passwort: ${invitePassword}. Dann hier auf "Neu laden".`)
-    }
-    setInviting(false)
   }
 
   const assignedCounts = members.reduce((acc, m) => {
@@ -117,7 +93,7 @@ function TeamView() {
   )
 }
 
-// ─── Haupt-App ─────────────────────────────────────────────────────────────────
+// ─── Haupt-App ────────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
