@@ -79,13 +79,20 @@ function TeamView() {
 
   const fetchData = async () => {
     setLoading(true)
-    const [profilesRes, contactsRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('role', 'sales_rep'),
-      supabase.from('contacts').select('*'),
-    ])
-    setMembers(profilesRes.data || [])
-    setContacts(contactsRes.data || [])
-    setLoading(false)
+    try {
+      const [profilesRes, contactsRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('role', 'sales_rep'),
+        supabase.from('contacts').select('*'),
+      ])
+      if (profilesRes.error) console.error('Team-Profile-Fehler:', profilesRes.error)
+      if (contactsRes.error) console.error('Team-Kontakte-Fehler:', contactsRes.error)
+      setMembers(profilesRes.data || [])
+      setContacts(contactsRes.data || [])
+    } catch (err) {
+      console.error('Team-Fetch-Fehler:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const assignedCounts = members.reduce((acc, m) => {
