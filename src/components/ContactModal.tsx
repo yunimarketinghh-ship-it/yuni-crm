@@ -1,212 +1,222 @@
-import { useState } from 'react'
-import { Contact } from '../lib/supabase'
-import { X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { supabase, Contact } from '../lib/supabase'
+import { X, Save, Trash2 } from 'lucide-react'
 
-interface Props {
+const PIPELINE_OPTIONS = [
+  { value: 'nicht_kontaktiert', label: 'Nicht kontaktiert' },
+  { value: 'lead',              label: 'Lead' },
+  { value: 'in_kontakt',        label: 'In Kontakt' },
+  { value: 'nicht_erreicht',    label: 'Nicht erreicht' },
+  { value: 'angebot',           label: 'Angebot' },
+  { value: 'gewonnen',          label: 'Gewonnen' },
+  { value: 'verloren',          label: 'Verloren' },
+]
+
+type Props = {
   contact: Contact | null
   onClose: () => void
   onSave: () => void
 }
 
-const STATUS_OPTIONS = [
-  { value: 'lead', label: 'Lead' },
-  { value: 'interessent', label: 'Interessent' },
-  { value: 'verhandlung', label: 'Verhandlung' },
-  { value: 'abschluss', label: 'Abschluss' },
-]
-
-const PRODUCT_PRICES: Record<string, number> = {
-  'Standard Erklärvideo': 500,
-  'C3 3D Video': 850,
-}
-
 export default function ContactModal({ contact, onClose, onSave }: Props) {
-  const c = contact as any
-  const [formData, setFormData] = useState({
-    name: c?.name || '',
-    email: c?.email || '',
-    phone: c?.phone || '',
-    company: c?.company || '',
-    product: c?.product || c?.produkt || '',
-    price: String(c?.price || ''),
-    status: c?.status || c?.pipeline_status || 'lead',
-    startzeitpunkt: c?.startzeitpunkt || '',
-    notes: c?.notes || '',
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    pipeline_status: 'nicht_kontaktiert',
+    price: '',
+    notes: '',
+    source: '',
   })
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleProductChange = (product: string) => {
-    const autoPrice = PRODUCT_PRICES[product]
-    setFormData(prev => ({
-      ...prev,
-      product,
-      price: autoPrice ? String(autoPrice) : (product === 'Sonstiges' ? prev.price : ''),
-    }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    try {
-      const existing: any[] = JSON.parse(localStorage.getItem('crm_contacts') || '[]')
-      const price = formData.price ? Number(formData.price) : (PRODUCT_PRICES[formData.product] || 0)
-      if (contact?.id) {
-        const updated = existing.map(x =>
-          x.id === contact.id
-            ? {
-                ...x,
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                company: formData.company,
-                product: formData.product,
-                produkt: formData.product,
-                price,
-                status: formData.status,
-                pipeline_status: formData.status,
-                startzeitpunkt: formData.startzeitpunkt,
-                notes: formData.notes,
-                updated_at: new Date().toISOString(),
-              }
-            : x
-        )
-        localStorage.setItem('crm_contacts', JSON.stringify(updated))
-      } else {
-        const newContact = {
-          id: Math.random().toString(36).substr(2, 9),
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          company: formData.company,
-          product: formData.product,
-          produkt: formData.product,
-          price,
-          status: formData.status,
-          pipeline_status: formData.status,
-          startzeitpunkt: formData.startzeitpunkt,
-          notes: formData.notes,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          source: 'manual',
-        }
-        existing.push(newContact)
-        localStorage.setItem('crm_contacts', JSON.stringify(existing))
-      }
-      onSave()
-    } catch (err) {
-      console.error('Error saving contact:', err)
-    } finally {
-      setSaving(false)
+  useEffect(() => {
+    if (contact) {
+      setForm({
+        name: contact.name || '',
+        email: contact.email || '',
+        phone: contact.phone || '',
+        company: contact.company || '',
+        pipeline_status: contact.pipeline_status || 'nicht_kontaktiert',
+        price: contact.price != null ? String(contact.price) : '',
+        notes: contact.notes || '',
+        source: contact.source || '',
+      })
     }
+  }, [contact])
+
+  const set = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }))
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { setError('Name ist erforderlich.'); return }
+    setSaving(true)
+    setError('')
+
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim() || null,
+      phone: form.phone.trim() || null,
+      company: form.company.trim() || null,
+      pipeline_status: form.pipeline_status,
+      price: form.price ? parseFloat(form.price) : null,
+      notes: form.notes.trim() || null,
+      source: form.source.trim() || null,
+    }
+
+    if (contact) {
+      const { error } = await supabase.from('contacts').update(payload).eq('id', contact.id)
+      if (error) { setError('Fehler beim Speichern.'); setSaving(false); return }
+    } else {
+      const { error } = await supabase.from('contacts').insert({ ...payload, id: crypto.randomUUID() })
+      if (error) { setError('Fehler beim Erstellen.'); setSaving(false); return }
+    }
+
+    setSaving(false)
+    onSave()
   }
 
-  const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+  const handleDelete = async () => {
+    if (!contact) return
+    if (!confirm('Kontakt wirklich löschen?')) return
+    setDeleting(true)
+    await supabase.from('contacts').delete().eq('id', contact.id)
+    onSave()
+  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-lg font-bold text-gray-900">
             {contact ? 'Kontakt bearbeiten' : 'Neuer Kontakt'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={20} />
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X size={18} className="text-gray-500" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-            <input type="text" required value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className={inputClass} placeholder="Vollständiger Name" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-              className={inputClass} placeholder="email@example.com" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
-            <input type="tel" value={formData.phone}
-              onChange={e => setFormData({ ...formData, phone: e.target.value })}
-              className={inputClass} placeholder="+49 123 456789" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Firma</label>
-            <input type="text" value={formData.company}
-              onChange={e => setFormData({ ...formData, company: e.target.value })}
-              className={inputClass} placeholder="Firmenname" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status / Phase</label>
-            <select value={formData.status}
-              onChange={e => setFormData({ ...formData, status: e.target.value })}
-              className={inputClass + ' bg-white'}>
-              {STATUS_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Produkt</label>
-            <select value={formData.product} onChange={e => handleProductChange(e.target.value)}
-              className={inputClass + ' bg-white'}>
-              <option value="">{'-- Produkt wählen --'}</option>
-              <option value="Standard Erklärvideo">{'Standard Erklärvideo · 500€'}</option>
-              <option value="C3 3D Video">{'C3 3D Video · 850€'}</option>
-              <option value="Sonstiges">Sonstiges</option>
-            </select>
-          </div>
-
-          {formData.product === 'Sonstiges' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Umsatz (€)
-              </label>
-              <input
-                type="number"
-                value={formData.price}
-                onChange={e => setFormData({ ...formData, price: e.target.value })}
-                className={inputClass}
-                placeholder="z.B. 1200"
-                min="0"
-              />
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+              {error}
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Startzeitpunkt</label>
-            <input type="text" value={formData.startzeitpunkt}
-              onChange={e => setFormData({ ...formData, startzeitpunkt: e.target.value })}
-              className={inputClass} placeholder="z.B. Innerhalb 2 Wochen" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+              <input
+                value={form.name}
+                onChange={e => set('name', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Max Mustermann"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Firma</label>
+              <input
+                value={form.company}
+                onChange={e => set('company', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Musterfirma GmbH"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">E-Mail</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={e => set('email', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="max@beispiel.de"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Telefon</label>
+              <input
+                value={form.phone}
+                onChange={e => set('phone', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="+49 170 1234567"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+              <select
+                value={form.pipeline_status}
+                onChange={e => set('pipeline_status', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
+                {PIPELINE_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Angebotswert (€)</label>
+              <input
+                type="number"
+                value={form.price}
+                onChange={e => set('price', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="1499"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Quelle</label>
+              <input
+                value={form.source}
+                onChange={e => set('source', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="facebook, website, empfehlung..."
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notizen</label>
-            <textarea value={formData.notes}
-              onChange={e => setFormData({ ...formData, notes: e.target.value })}
-              rows={3} className={inputClass + ' resize-none'}
-              placeholder="Interne Notizen..." />
+            <label className="block text-xs font-medium text-gray-600 mb-1">Notizen</label>
+            <textarea
+              value={form.notes}
+              onChange={e => set('notes', e.target.value)}
+              rows={3}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              placeholder="Interne Notizen..."
+            />
           </div>
+        </div>
 
-          <div className="flex gap-2 pt-4">
-            <button type="button" onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50">
+        {/* Footer */}
+        <div className="p-6 border-t flex items-center gap-3">
+          {contact && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex items-center gap-1.5 text-red-600 hover:text-red-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+            >
+              <Trash2 size={14} /> Löschen
+            </button>
+          )}
+          <div className="flex gap-2 ml-auto">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
               Abbrechen
             </button>
-            <button type="submit" disabled={saving}
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50">
-              {saving ? 'Speichert...' : 'Speichern'}
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-1.5 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 text-sm font-medium"
+            >
+              <Save size={14} /> {saving ? 'Speichert...' : 'Speichern'}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )

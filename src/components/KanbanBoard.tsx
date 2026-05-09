@@ -1,120 +1,104 @@
 import { useState } from 'react'
-import { supabase, Deal, Contact } from '../lib/supabase'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Contact, Deal, supabase } from '../lib/supabase'
 
-interface Props {
-  deals: Deal[]
+const COLUMNS = [
+  { key: 'nicht_kontaktiert', label: 'Nicht kontaktiert', color: 'bg-gray-100',   dot: 'bg-gray-400' },
+  { key: 'lead',              label: 'Lead',               color: 'bg-blue-50',   dot: 'bg-blue-400' },
+  { key: 'in_kontakt',        label: 'In Kontakt',         color: 'bg-indigo-50', dot: 'bg-indigo-400' },
+  { key: 'nicht_erreicht',    label: 'Nicht erreicht',     color: 'bg-orange-50', dot: 'bg-orange-400' },
+  { key: 'angebot',           label: 'Angebot',            color: 'bg-yellow-50', dot: 'bg-yellow-400' },
+  { key: 'gewonnen',          label: 'Gewonnen',           color: 'bg-green-50',  dot: 'bg-green-400' },
+  { key: 'verloren',          label: 'Verloren',           color: 'bg-red-50',    dot: 'bg-red-400' },
+]
+
+type Props = {
   contacts: Contact[]
+  deals: Deal[]
   onRefresh: () => void
   onSelectContact: (contact: Contact) => void
 }
 
-const stages = ['interessent', 'verhandlung', 'abschluss']
-const stageConfig: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
-  lead: { label: 'Lead', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-400' },
-  interessent: { label: 'Interessent', color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', dot: 'bg-purple-400' },
-  verhandlung: { label: 'Verhandlung', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-400' },
-  abschluss: { label: 'Abschluss', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', dot: 'bg-green-500' },
-}
+export default function KanbanBoard({ contacts, onRefresh, onSelectContact }: Props) {
+  const [dragging, setDragging] = useState<string | null>(null)
 
-export default function KanbanBoard({ deals: _deals, contacts, onRefresh, onSelectContact }: Props) {
-  const [movingId, setMovingId] = useState<string | null>(null)
+  const byStatus = (key: string) =>
+    contacts.filter(c => (c.pipeline_status || 'nicht_kontaktiert') === key)
 
-  const moveContact = async (contact: Contact, direction: 'left' | 'right', e: React.MouseEvent) => {
-    e.stopPropagation()
-    const currentIdx = stages.indexOf(contact.pipeline_status || 'lead')
-    const newIdx = direction === 'right' ? currentIdx + 1 : currentIdx - 1
-    if (newIdx < 0 || newIdx >= stages.length) return
-    setMovingId(contact.id)
-    await supabase
-      .from('contacts')
-      .update({ pipeline_status: stages[newIdx] })
-      .eq('id', contact.id)
-    setTimeout(() => { setMovingId(null); onRefresh() }, 150)
+  const handleDragStart = (id: string) => setDragging(id)
+  const handleDragEnd = () => setDragging(null)
+
+  const handleDrop = async (key: string) => {
+    if (!dragging) return
+    await supabase.from('contacts').update({ pipeline_status: key }).eq('id', dragging)
+    setDragging(null)
+    onRefresh()
   }
 
   return (
     <div className="overflow-x-auto pb-4">
-      <div className="flex gap-4 min-w-min">
-        {stages.map(stage => {
-          const cfg = stageConfig[stage]
-          const stageContacts = contacts.filter(c => (c.pipeline_status || 'lead') === stage)
-          const totalValue = stageContacts.reduce((sum, c) => sum + (c.price || 0), 0)
-          const stageIdx = stages.indexOf(stage)
+      <div className="flex gap-4 min-w-max">
+        {COLUMNS.map(col => {
+          const cards = byStatus(col.key)
           return (
-            <div key={stage} className="flex-shrink-0 w-72 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden flex flex-col shadow-sm">
-              <div className={`${cfg.bg} ${cfg.border} border-b p-4`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`} />
-                    <h3 className={`font-bold text-sm ${cfg.color}`}>{cfg.label}</h3>
-                  </div>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full bg-white/80 ${cfg.color} border ${cfg.border} shadow-sm`}>
-                    {stageContacts.length}
-                  </span>
+            <div
+              key={col.key}
+              className="w-64 flex flex-col gap-2"
+              onDragOver={e => e.preventDefault()}
+              onDrop={() => handleDrop(col.key)}
+            >
+              {/* Column Header */}
+              <div className={`flex items-center justify-between px-3 py-2 rounded-lg ${col.color}`}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${col.dot}`} />
+                  <span className="text-sm font-semibold text-gray-700">{col.label}</span>
                 </div>
-                <div className="mt-1.5 text-xs text-gray-500">
-                  Gesamt: <span className="font-bold text-gray-700">
-                    {totalValue > 0 ? `${totalValue.toLocaleString('de-DE')} €` : '—'}
-                  </span>
-                </div>
+                <span className="text-xs font-medium text-gray-500 bg-white/70 px-2 py-0.5 rounded-full">
+                  {cards.length}
+                </span>
               </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ maxHeight: '520px' }}>
-                {stageContacts.map(contact => {
-                  const price = contact.price
-                  return (
-                    <div
-                      key={contact.id}
-                      onClick={() => onSelectContact(contact)}
-                      className={`bg-white rounded-lg border border-gray-200 p-3.5 hover:shadow-md hover:border-indigo-300 cursor-pointer transition-all ${movingId === contact.id ? 'opacity-50' : ''}`}
-                    >
-                      <div className="flex items-start gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                          {contact.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-gray-900 text-sm leading-snug truncate">{contact.name}</h4>
-                          {contact.company && <p className="text-xs text-gray-400 truncate">{contact.company}</p>}
-                        </div>
+
+              {/* Cards */}
+              <div className="space-y-2 min-h-[200px]">
+                {cards.map(contact => (
+                  <div
+                    key={contact.id}
+                    draggable
+                    onDragStart={() => handleDragStart(contact.id)}
+                    onDragEnd={handleDragEnd}
+                    onClick={() => onSelectContact(contact)}
+                    className={`bg-white rounded-xl border border-gray-200 p-3 cursor-pointer hover:border-indigo-300 hover:shadow-sm transition-all select-none ${
+                      dragging === contact.id ? 'opacity-50 scale-95' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs font-bold">{contact.name.charAt(0).toUpperCase()}</span>
                       </div>
-                      {contact.produkt && (
-                        <div className="mt-2 text-xs text-gray-500 truncate">{contact.produkt}</div>
-                      )}
-                      {price != null && price > 0 && (
-                        <div className="mt-1.5 text-xs font-bold text-indigo-600">
-                          {price.toLocaleString('de-DE')} €
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1 mt-2.5 pt-2.5 border-t border-gray-100">
-                        <button
-                          onClick={e => moveContact(contact, 'left', e)}
-                          disabled={stageIdx === 0}
-                          className={`flex items-center gap-0.5 text-xs transition-colors px-1.5 py-0.5 rounded ${
-                            stageIdx === 0 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'
-                          }`}
-                        >
-                          <ChevronLeft size={13} />
-                          <span>{stageIdx > 0 ? stageConfig[stages[stageIdx - 1]].label : ''}</span>
-                        </button>
-                        <div className="flex-1" />
-                        <button
-                          onClick={e => moveContact(contact, 'right', e)}
-                          disabled={stageIdx === stages.length - 1}
-                          className={`flex items-center gap-0.5 text-xs transition-colors px-1.5 py-0.5 rounded ${
-                            stageIdx === stages.length - 1 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'
-                          }`}
-                        >
-                          <span>{stageIdx < stages.length - 1 ? stageConfig[stages[stageIdx + 1]].label : ''}</span>
-                          <ChevronRight size={13} />
-                        </button>
-                      </div>
+                      <p className="text-sm font-medium text-gray-900 truncate">{contact.name}</p>
                     </div>
-                  )
-                })}
-                {stageContacts.length === 0 && (
-                  <div className="text-center py-8 text-gray-300 text-xs">Keine Kontakte</div>
-                )}
+                    {contact.company && (
+                      <p className="text-xs text-gray-400 truncate mb-1">{contact.company}</p>
+                    )}
+                    {contact.phone && (
+                      <p className="text-xs text-gray-400 truncate">{contact.phone}</p>
+                    )}
+                    {contact.price != null && contact.price > 0 && (
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <span className="text-xs font-semibold text-emerald-600">
+                          {contact.price.toLocaleString('de-DE')} €
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
+
+              {/* Column total */}
+              {cards.length > 0 && (
+                <div className="text-xs text-gray-400 text-center py-1">
+                  {cards.reduce((sum, c) => sum + (c.price || 0), 0).toLocaleString('de-DE')} € Potenzial
+                </div>
+              )}
             </div>
           )
         })}

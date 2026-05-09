@@ -7,9 +7,10 @@ import { Search, UserPlus, Trash2, ChevronDown } from 'lucide-react'
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-gray-100 text-gray-700' },
   lead:              { label: 'Lead',               color: 'bg-blue-100 text-blue-700' },
-  interessent:       { label: 'Interessent',        color: 'bg-indigo-100 text-indigo-700' },
-  verhandlung:       { label: 'Verhandlung',        color: 'bg-yellow-100 text-yellow-700' },
-  abschluss:         { label: 'Abschluss',          color: 'bg-green-100 text-green-700' },
+  in_kontakt:        { label: 'In Kontakt',         color: 'bg-indigo-100 text-indigo-700' },
+  nicht_erreicht:    { label: 'Nicht erreicht',     color: 'bg-orange-100 text-orange-700' },
+  angebot:           { label: 'Angebot',            color: 'bg-yellow-100 text-yellow-700' },
+  gewonnen:          { label: 'Gewonnen',           color: 'bg-green-100 text-green-700' },
   verloren:          { label: 'Verloren',           color: 'bg-red-100 text-red-700' },
 }
 
@@ -59,11 +60,11 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh, sal
     setSelected(next)
   }
 
-  const selectedContacts = contacts.filter(c => selected.has(c.id))
+  // const selectedContacts = contacts.filter(c => selected.has(c.id))
 
   const handleDelete = async () => {
     if (!selected.size) return
-    if (!confirm(`${selected.size} Kontakt(e) wirklich lÃ¶schen?`)) return
+    if (!confirm(`${selected.size} Kontakt(e) wirklich löschen?`)) return
     setDeleting(true)
     await supabase.from('contacts').delete().in('id', Array.from(selected))
     setSelected(new Set())
@@ -72,7 +73,7 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh, sal
   }
 
   const repName = (id: string | null) => {
-    if (!id) return 'â'
+    if (!id) return '-'
     return salesReps.find(r => r.id === id)?.name || 'Unbekannt'
   }
 
@@ -125,7 +126,7 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh, sal
       {/* Bulk actions */}
       {selected.size > 0 && (
         <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5">
-          <span className="text-sm font-medium text-indigo-700">{selected.size} ausgewÃ¤hlt</span>
+          <span className="text-sm font-medium text-indigo-700">{selected.size} ausgewählt</span>
           <button
             onClick={() => setShowAssign(true)}
             className="flex items-center gap-1.5 bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors"
@@ -137,7 +138,7 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh, sal
             disabled={deleting}
             className="flex items-center gap-1.5 bg-red-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
           >
-            <Trash2 size={14} /> LÃ¶schen
+            <Trash2 size={14} /> Löschen
           </button>
           <button
             onClick={() => setSelected(new Set())}
@@ -168,7 +169,7 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh, sal
                 <th className="px-4 py-3 text-left font-medium text-gray-600 hidden sm:table-cell">Status</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600 hidden xl:table-cell">Vertriebler</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600 hidden xl:table-cell">Quelle</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden lg:table-cell">Erstellt</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 hidden lg:table-cell">Lead-Datum</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -209,10 +210,10 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh, sal
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-600 hidden md:table-cell">
-                        {contact.company || 'â'}
+                        {contact.company || '-'}
                       </td>
                       <td className="px-4 py-3 text-gray-600 hidden lg:table-cell">
-                        {contact.phone || 'â'}
+                        {contact.phone || '–'}
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${st.color}`}>
@@ -223,10 +224,10 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh, sal
                         {repName(contact.assigned_to)}
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs hidden xl:table-cell capitalize">
-                        {contact.source || 'â'}
+                        {contact.source || '–'}
                       </td>
                       <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">
-                        {new Date(contact.created_at).toLocaleDateString('de-DE')}
+                        {new Date(contact.lead_date || contact.created_at).toLocaleDateString('de-DE')}
                       </td>
                     </tr>
                   )
@@ -243,7 +244,7 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh, sal
 
       {showAssign && (
         <AssignModal
-          contactIds={selectedContacts.map(c => c.id)}
+          contactIds={Array.from(selected)}
           onClose={() => setShowAssign(false)}
           onDone={() => { setSelected(new Set()); onRefresh() }}
         />
