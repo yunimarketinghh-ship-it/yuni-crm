@@ -4,9 +4,9 @@ import { LogOut, Phone, Mail, Building2, MessageSquare, TrendingUp, CheckCircle,
 
 const STATUS_LABELS: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-gray-100 text-gray-700', icon: Clock },
-  interessent:       { label: 'Interessent',        color: 'bg-blue-100 text-blue-700',  icon: AlertCircle },
-  verhandlung:       { label: 'Verhandlung',         color: 'bg-yellow-100 text-yellow-700', icon: TrendingUp },
-  abschluss:         { label: 'Abschluss',           color: 'bg-green-100 text-green-700',  icon: CheckCircle },
+  in_kontakt:        { label: 'In Kontakt',         color: 'bg-indigo-100 text-indigo-700', icon: AlertCircle },
+  angebot:           { label: 'Angebot',            color: 'bg-yellow-100 text-yellow-700', icon: TrendingUp },
+  gewonnen:          { label: 'Gewonnen',           color: 'bg-green-100 text-green-700',  icon: CheckCircle },
   verloren:          { label: 'Verloren',            color: 'bg-red-100 text-red-700',      icon: X },
 }
 
@@ -232,9 +232,9 @@ export default function SalesRepView({ profile }: Props) {
 
   const stats = {
     total: contacts.length,
-    interessent: contacts.filter(c => c.pipeline_status === 'interessent').length,
-    verhandlung: contacts.filter(c => c.pipeline_status === 'verhandlung').length,
-    abschluss: contacts.filter(c => c.pipeline_status === 'abschluss').length,
+    in_kontakt: contacts.filter(c => c.pipeline_status === 'in_kontakt').length,
+    angebot: contacts.filter(c => c.pipeline_status === 'angebot').length,
+    gewonnen: contacts.filter(c => c.pipeline_status === 'gewonnen').length,
   }
 
   return (
@@ -265,9 +265,9 @@ export default function SalesRepView({ profile }: Props) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           {[
             { label: 'Meine Leads', value: stats.total, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-            { label: 'Interessenten', value: stats.interessent, color: 'text-blue-600', bg: 'bg-blue-50' },
-            { label: 'In Verhandlung', value: stats.verhandlung, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-            { label: 'AbschlÃ¼sse', value: stats.abschluss, color: 'text-green-600', bg: 'bg-green-50' },
+            { label: 'In Kontakt', value: stats.in_kontakt, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Angebot', value: stats.angebot, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+            { label: 'Gewonnen', value: stats.gewonnen, color: 'text-green-600', bg: 'bg-green-50' },
           ].map(s => (
             <div key={s.label} className={`${s.bg} rounded-xl p-4`}>
               <p className="text-xs text-gray-500 mb-1">{s.label}</p>
