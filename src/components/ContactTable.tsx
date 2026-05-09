@@ -243,7 +243,7 @@ export default function ContactTable({ contacts, onSelectContact, onRefresh, sal
 
       {showAssign && (
         <AssignModal
-          contacts={selectedContacts}
+          contactIds={selectedContacts.map(c => c.id)}
           onClose={() => setShowAssign(false)}
           onDone={() => { setSelected(new Set()); onRefresh() }}
         />
