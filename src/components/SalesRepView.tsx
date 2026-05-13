@@ -1,19 +1,20 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase, Contact, Activity, Profile } from '../lib/supabase'
-import { LogOut, Phone, Mail, Building2, MessageSquare, TrendingUp, CheckCircle, Clock, AlertCircle, Plus, X } from 'lucide-react'
+import { LogOut, Phone, Mail, Building2, MessageSquare, TrendingUp, CheckCircle, Clock, AlertCircle, Plus, X, PhoneCall } from 'lucide-react'
 import Dashboard from './Dashboard'
 
-const STATUS_LABELS: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-gray-100 text-gray-700', icon: Clock },
-  lead:              { label: 'Lead',               color: 'bg-blue-100 text-blue-700',  icon: Clock },
-  in_kontakt:        { label: 'In Kontakt',         color: 'bg-indigo-100 text-indigo-700', icon: AlertCircle },
-  nicht_erreicht:    { label: 'Nicht erreicht',     color: 'bg-orange-100 text-orange-700', icon: Clock },
-  angebot:           { label: 'Angebot',            color: 'bg-yellow-100 text-yellow-700', icon: TrendingUp },
-  gewonnen:          { label: 'Gewonnen',           color: 'bg-green-100 text-green-700',  icon: CheckCircle },
-  verloren:          { label: 'Verloren',           color: 'bg-red-100 text-red-700',      icon: X },
+const STATUS_LABELS: Record<string, { label: string; color: string; activeColor: string; icon: React.ReactNode }> = {
+  nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-gray-100 text-gray-700',    activeColor: 'bg-gray-600 text-white',    icon: <Clock className="w-3 h-3" /> },
+  lead:              { label: 'Lead',               color: 'bg-blue-100 text-blue-700',    activeColor: 'bg-blue-600 text-white',    icon: <TrendingUp className="w-3 h-3" /> },
+  in_kontakt:        { label: 'In Kontakt',         color: 'bg-indigo-100 text-indigo-700', activeColor: 'bg-indigo-600 text-white', icon: <MessageSquare className="w-3 h-3" /> },
+  nicht_erreicht:    { label: 'Nicht erreicht',     color: 'bg-orange-100 text-orange-700', activeColor: 'bg-orange-500 text-white', icon: <AlertCircle className="w-3 h-3" /> },
+  angebot:           { label: 'Angebot',            color: 'bg-yellow-100 text-yellow-700', activeColor: 'bg-yellow-500 text-white', icon: <Plus className="w-3 h-3" /> },
+  gewonnen:          { label: 'Gewonnen',           color: 'bg-green-100 text-green-700',   activeColor: 'bg-green-600 text-white',  icon: <CheckCircle className="w-3 h-3" /> },
+  verloren:          { label: 'Verloren',           color: 'bg-red-100 text-red-700',       activeColor: 'bg-red-600 text-white',    icon: <X className="w-3 h-3" /> },
 }
 
-type ContactDetailProps = {
+// ─── ContactDetail ────────────────────────────────────────────────────────────
+interface ContactDetailProps {
   contact: Contact
   onClose: () => void
   onUpdated: () => void
@@ -21,169 +22,178 @@ type ContactDetailProps = {
 }
 
 function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailProps) {
-  const [status, setStatus] = useState(contact.pipeline_status || 'nicht_kontaktiert')
   const [activities, setActivities] = useState<Activity[]>([])
-  const [newNote, setNewNote] = useState('')
-  const [activityType, setActivityType] = useState('note')
+  const [note, setNote] = useState('')
+  const [status, setStatus] = useState(contact.pipeline_status || 'lead')
   const [saving, setSaving] = useState(false)
-  const [loadingActs, setLoadingActs] = useState(true)
+  const noteRef = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => { fetchActivities() }, [contact.id])
-
-  const fetchActivities = async () => {
-    setLoadingActs(true)
+  const fetchActivities = useCallback(async () => {
     const { data } = await supabase
       .from('activities')
       .select('*')
       .eq('contact_id', contact.id)
       .order('created_at', { ascending: false })
     setActivities(data || [])
-    setLoadingActs(false)
+  }, [contact.id])
+
+  useEffect(() => {
+    fetchActivities()
+  }, [fetchActivities])
+
+  const saveNote = async () => {
+    if (!note.trim()) return
+    setSaving(true)
+    await supabase.from('activities').insert({
+      contact_id: contact.id,
+      type: 'note',
+      description: note.trim(),
+      created_by: userId,
+    })
+    setNote('')
+    await fetchActivities()
+    setSaving(false)
+    noteRef.current?.focus()
   }
 
-  const handleStatusChange = async (newStatus: string) => {
+  const updateStatus = async (newStatus: string) => {
     setStatus(newStatus)
     await supabase.from('contacts').update({ pipeline_status: newStatus }).eq('id', contact.id)
     onUpdated()
   }
 
-  const handleAddActivity = async () => {
-    if (!newNote.trim()) return
-    setSaving(true)
-    await supabase.from('activities').insert({
-      id: crypto.randomUUID(),
-      contact_id: contact.id,
-      type: activityType,
-      text: newNote.trim(),
-      user_id: userId,
-    })
-    setNewNote('')
-    await fetchActivities()
-    setSaving(false)
-  }
-
-  const activityTypeIcon = (type: string) => {
-    const icons: Record<string, string> = { note: '📝', call: '📞', email: '📧', meeting: '🤝', other: '📌' }
-    return icons[type] || '📌'
-  }
+  const statusInfo = STATUS_LABELS[status] || STATUS_LABELS['lead']
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <div className="flex items-start justify-between p-6 border-b">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">{contact.name}</h2>
-            {contact.company && <p className="text-sm text-gray-500 mt-0.5">{contact.company}</p>}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-bold text-sm">{contact.name.charAt(0).toUpperCase()}</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">{contact.name}</h3>
+              {contact.company && <p className="text-xs text-gray-500">{contact.company}</p>}
+            </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <X size={20} className="text-gray-500" />
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
-        <div className="overflow-y-auto flex-1 p-6 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {contact.email && (
-              <a href={`mailto:${contact.email}`} className="flex items-center gap-2 text-sm text-indigo-600 hover:underline">
-                <Mail size={16} />{contact.email}
-              </a>
-            )}
+
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {/* Quick action buttons */}
+          <div className="flex gap-2">
             {contact.phone && (
-              <a href={`tel:${contact.phone}`} className="flex items-center gap-2 text-sm text-indigo-600 hover:underline">
-                <Phone size={16} />{contact.phone}
+              <a
+                href={`tel:${contact.phone}`}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium text-sm transition-colors"
+              >
+                <PhoneCall className="w-4 h-4" />
+                Anrufen
               </a>
             )}
-            {contact.company && (
-              <span className="flex items-center gap-2 text-sm text-gray-600">
-                <Building2 size={16} />{contact.company}
-              </span>
+            {contact.email && (
+              <a
+                href={`mailto:${contact.email}`}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-medium text-sm transition-colors"
+              >
+                <Mail className="w-4 h-4" />
+                E-Mail
+              </a>
             )}
           </div>
+
+          {/* Contact info */}
+          <div className="space-y-2">
+            {contact.phone && (
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span className="text-sm text-gray-600">{contact.phone}</span>
+              </div>
+            )}
+            {contact.email && (
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span className="text-sm text-gray-600">{contact.email}</span>
+              </div>
+            )}
+            {contact.company && (
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span className="text-sm text-gray-600">{contact.company}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Status selector */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Status ändern</h3>
-            <div className="flex flex-wrap gap-2">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Status setzen</p>
+            <div className="grid grid-cols-2 gap-2">
               {Object.entries(STATUS_LABELS).map(([key, val]) => (
                 <button
                   key={key}
-                  onClick={() => handleStatusChange(key)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border-2 ${
-                    status === key
-                      ? `${val.color} border-current shadow-sm`
-                      : 'bg-gray-50 text-gray-500 border-transparent hover:border-gray-300'
+                  onClick={() => updateStatus(key)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    status === key ? val.activeColor + ' ring-2 ring-offset-1 ring-current' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                   }`}
                 >
+                  {val.icon}
                   {val.label}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Note input */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Aktivität / Notiz</h3>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                {['note', 'call', 'email', 'meeting'].map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setActivityType(t)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      activityType === t ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {activityTypeIcon(t)} {t === 'note' ? 'Notiz' : t === 'call' ? 'Anruf' : t === 'email' ? 'E-Mail' : 'Meeting'}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  value={newNote}
-                  onChange={e => setNewNote(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAddActivity()}
-                  placeholder="Notiz eingeben..."
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-                <button
-                  onClick={handleAddActivity}
-                  disabled={saving || !newNote.trim()}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-                >
-                  <Plus size={16} />
-                </button>
-              </div>
-            </div>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Gesprächsnotiz</p>
+            <textarea
+              ref={noteRef}
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && e.ctrlKey && saveNote()}
+              placeholder={"Was wurde besprochen? Rückruf wann? Interesse woran?\n(Strg+Enter zum Speichern)"}
+              rows={3}
+              className="w-full px-3 py-2.5 bg-gray-50 rounded-xl text-sm border border-gray-200 focus:outline-none focus:border-indigo-300 resize-none"
+            />
+            <button
+              onClick={saveNote}
+              disabled={saving || !note.trim()}
+              className="mt-2 w-full py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium disabled:opacity-40 hover:bg-indigo-700 transition-colors"
+            >
+              {saving ? 'Wird gespeichert...' : 'Notiz speichern'}
+            </button>
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <MessageSquare size={14} /> Verlauf
-            </h3>
-            {loadingActs ? (
-              <p className="text-sm text-gray-400">Lädt...</p>
-            ) : activities.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">Noch keine Aktivitäten.</p>
-            ) : (
+
+          {/* Activity log */}
+          {activities.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Verlauf</p>
               <div className="space-y-2">
                 {activities.map(act => (
-                  <div key={act.id} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
-                    <span className="text-lg">{activityTypeIcon(act.type)}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800">{act.text}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {new Date(act.created_at).toLocaleDateString('de-DE', {
-                          day: '2-digit', month: '2-digit', year: 'numeric',
-                          hour: '2-digit', minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
+                  <div key={act.id} className="p-3 bg-gray-50 rounded-xl border-l-2 border-indigo-200">
+                    <p className="text-sm text-gray-700">{act.description}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(act.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 type Props = { profile: Profile }
 
+// ─── SalesRepView ─────────────────────────────────────────────────────────────
 export default function SalesRepView({ profile }: Props) {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
@@ -217,7 +227,9 @@ export default function SalesRepView({ profile }: Props) {
     fetchActivities()
   }, [fetchContacts, fetchActivities])
 
-  const handleLogout = async () => { await supabase.auth.signOut() }
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+  }
 
   const stats = {
     totalContacts: contacts.length,
@@ -228,60 +240,63 @@ export default function SalesRepView({ profile }: Props) {
     pipelineValue: contacts.filter(c => c.pipeline_status === 'lead').length * 850,
   }
 
+  const statusCounts: Record<string, number> = { alle: contacts.length }
+  for (const c of contacts) {
+    const s = c.pipeline_status || 'lead'
+    statusCounts[s] = (statusCounts[s] || 0) + 1
+  }
+
   const filtered = contacts.filter(c => {
-    const matchSearch = !search
-      || c.name.toLowerCase().includes(search.toLowerCase())
-      || (c.email || '').toLowerCase().includes(search.toLowerCase())
-      || (c.company || '').toLowerCase().includes(search.toLowerCase())
-    const matchStatus = filterStatus === 'alle' || (c.pipeline_status || '') === filterStatus
+    const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.company || '').toLowerCase().includes(search.toLowerCase())
+    const matchStatus = filterStatus === 'alle' || c.pipeline_status === filterStatus
     return matchSearch && matchStatus
   })
 
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'contacts',  label: 'Kontakte' },
-  ] as const
+  const visibleStatusTabs = Object.entries(STATUS_LABELS).filter(([key]) => (statusCounts[key] || 0) > 0)
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">Y</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">YUNI CRM</h1>
-                <p className="text-xs text-gray-500">Admin — {profile.name}</p>
-              </div>
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xs">Y</span>
             </div>
-            <nav className="flex gap-1">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeTab === tab.id
-                      ? 'text-indigo-600 bg-indigo-50'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
+            <div>
+              <h1 className="text-sm font-semibold text-gray-900">YUNI CRM</h1>
+              <p className="text-xs text-gray-500">{profile.full_name || profile.email}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              onClick={() => setActiveTab('dashboard')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                activeTab === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
             >
-              <LogOut size={16} /> Abmelden
+              Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('contacts')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                activeTab === 'contacts' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Kontakte{contacts.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-700 rounded-full px-1.5 py-0.5">{contacts.length}</span>}
             </button>
           </div>
+          <button onClick={handleSignOut} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
-      </header>
+      </div>
 
-      {activeTab === 'dashboard' ? (
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : activeTab === 'dashboard' ? (
         <Dashboard
           stats={stats}
           contacts={contacts}
@@ -290,77 +305,104 @@ export default function SalesRepView({ profile }: Props) {
           onNavigateToContacts={() => setActiveTab('contacts')}
         />
       ) : (
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="max-w-7xl mx-auto px-4 pt-4 pb-6">
+          <div className="mb-3">
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Name, E-Mail oder Firma suchen..."
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Name oder Firma suchen..."
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-300 shadow-sm"
             />
-            <select
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-            >
-              <option value="alle">Alle Status</option>
-              {Object.entries(STATUS_LABELS).map(([key, val]) => (
-                <option key={key} value={key}>{val.label}</option>
-              ))}
-            </select>
           </div>
-          {loading ? (
-            <div className="flex justify-center py-20">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-20 text-gray-400">
-              <p className="text-lg">Keine Kontakte gefunden.</p>
+
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+            <button
+              onClick={() => setFilterStatus('alle')}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                filterStatus === 'alle' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              Alle
+              <span className={`rounded-full px-1.5 py-0.5 text-xs ${filterStatus === 'alle' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                {statusCounts.alle}
+              </span>
+            </button>
+            {visibleStatusTabs.map(([key, val]) => (
+              <button
+                key={key}
+                onClick={() => setFilterStatus(key)}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  filterStatus === key ? val.activeColor : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                {val.icon}
+                {val.label}
+                <span className={`rounded-full px-1.5 py-0.5 text-xs ${filterStatus === key ? 'bg-white/20' : 'bg-gray-100 text-gray-500'}`}>
+                  {statusCounts[key] || 0}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 text-gray-400">
+              <p className="text-lg font-medium">Keine Kontakte gefunden</p>
+              <p className="text-sm mt-1">{search ? 'Suchbegriff anpassen' : 'Noch keine Leads in diesem Status'}</p>
             </div>
           ) : (
             <div className="space-y-2">
               {filtered.map(contact => {
-                const st = STATUS_LABELS[contact.pipeline_status || ''] || STATUS_LABELS.nicht_kontaktiert
+                const st = STATUS_LABELS[contact.pipeline_status || 'lead'] || STATUS_LABELS['lead']
                 return (
-                  <button
-                    key={contact.id}
-                    onClick={() => setSelected(contact)}
-                    className="w-full bg-white rounded-xl border border-gray-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-white font-bold text-sm">{contact.name.charAt(0).toUpperCase()}</span>
+                  <div key={contact.id} className="bg-white rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-sm transition-all">
+                    <button onClick={() => setSelected(contact)} className="w-full p-4 text-left">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white font-bold text-sm">{contact.name.charAt(0).toUpperCase()}</span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate text-sm">{contact.name}</p>
+                            {contact.company && <p className="text-xs text-gray-500 truncate">{contact.company}</p>}
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-gray-900 truncate">{contact.name}</p>
-                          <p className="text-xs text-gray-500 truncate">{contact.company || contact.email || ''}</p>
-                        </div>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${st.color}`}>
+                          {st.icon}
+                          {st.label}
+                        </span>
                       </div>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 ${st.color}`}>
-                        {st.label}
-                      </span>
-                    </div>
+                    </button>
                     {(contact.phone || contact.email) && (
-                      <div className="flex gap-4 mt-2">
+                      <div className="flex border-t border-gray-100">
                         {contact.phone && (
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
-                            <Phone size={11} /> {contact.phone}
-                          </span>
+                          <a
+                            href={`tel:${contact.phone}`}
+                            onClick={e => e.stopPropagation()}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-medium text-green-700 hover:bg-green-50 transition-colors rounded-bl-xl"
+                          >
+                            <PhoneCall className="w-3.5 h-3.5" />
+                            {contact.phone}
+                          </a>
                         )}
+                        {contact.email && contact.phone && <div className="w-px bg-gray-100" />}
                         {contact.email && (
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
-                            <Mail size={11} /> {contact.email}
-                          </span>
+                          <a
+                            href={`mailto:${contact.email}`}
+                            onClick={e => e.stopPropagation()}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition-colors rounded-br-xl"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            E-Mail
+                          </a>
                         )}
                       </div>
                     )}
-                  </button>
+                  </div>
                 )
               })}
             </div>
           )}
-        </main>
+        </div>
       )}
 
       {selected && (
