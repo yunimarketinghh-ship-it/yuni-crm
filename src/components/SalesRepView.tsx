@@ -1,37 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, Contact, Activity, Profile } from '../lib/supabase'
 import { LogOut, Phone, Mail, Building2, MessageSquare, TrendingUp, CheckCircle, Clock, AlertCircle, Plus, X } from 'lucide-react'
-
-const STATUS_LABELS: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-gray-100 text-gray-700', icon: Clock },
-  in_kontakt:        { label: 'In Kontakt',         color: 'bg-indigo-100 text-indigo-700', icon: AlertCircle },
-  angebot:           { label: 'Angebot',            color: 'bg-yellow-100 text-yellow-700', icon: TrendingUp },
-  gewonnen:          { label: 'Gewonnen',           color: 'bg-green-100 text-green-700',  icon: CheckCircle },
-  verloren:          { label: 'Verloren',            color: 'bg-red-100 text-red-700',      icon: X },
-}
-
-type ContactDetailProps = {
-  contact: Contact
-  onClose: () => void
-  onUpdated: () => void
-  userId: string
-}
-
-function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailProps) {
-  const [status, setStatus] = useState(contact.pipeline_status || 'nicht_kontaktiert')
-  const [activities, setActivities] = useState<Activity[]>([])
-  const [newNote, setNewNote] = useState('')
-  const [activityType, setActivityType] = useState('note')
-  const [saving, setSaving] = useState(false)
-  const [loadingActs, setLoadingActs] = useState(true)
-
-  useEffect(() => {
-    fetchActivities()
-  }, [contact.id])
-
-  const fetchActivities = async () => {
-import { supabase, Contact, Activity, Profile } from '../lib/supabase'
-import { LogOut, Phone, Mail, Building2, MessageSquare, TrendingUp, CheckCircle, Clock, AlertCircle, Plus, X } from 'lucide-react'
 import Dashboard from './Dashboard'
 
 const STATUS_LABELS: Record<string, { label: string; color: string; icon: typeof Clock }> = {
