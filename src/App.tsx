@@ -271,10 +271,10 @@ export default function App() {
 
   const stats = {
     totalContacts: contacts.length, totalDeals: deals.length,
-    wonDeals: contacts.filter(c => c.pipeline_status === 'abschluss').length,
-    revenue: contacts.filter(c => c.pipeline_status === 'abschluss').reduce((sum, c) => sum + (c.price || 0), 0),
-    activeLeads: contacts.filter(c => ['interessent', 'lead', 'nicht_kontaktiert'].includes(c.pipeline_status || '')).length,
-    pipelineValue: contacts.reduce((sum, c) => sum + (c.price || 0), 0),
+    wonDeals: contacts.filter(c => c.pipeline_status === 'gewonnen').length,
+    revenue: contacts.filter(c => c.pipeline_status === 'gewonnen').reduce((sum, c) => sum + (c.price || 0), 0),
+    activeLeads: contacts.filter(c => c.pipeline_status === 'lead').length,
+    pipelineValue: contacts.filter(c => c.pipeline_status === 'lead').length * 850,
   }
 
   return (
