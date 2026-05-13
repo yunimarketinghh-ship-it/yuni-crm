@@ -62,7 +62,6 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
     onUpdated()
   }
 
-  const statusInfo = STATUS_LABELS[status] || STATUS_LABELS['lead']
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
