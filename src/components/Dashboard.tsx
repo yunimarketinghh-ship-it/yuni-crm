@@ -38,7 +38,7 @@ const statusLabels: Record<string, string> = {
   verloren:          'Verloren',
 }
 
-const stageOrder = ['nicht_kontaktiert', 'lead', 'in_kontakt', 'nicht_erreicht', 'angebot', 'gewonnen', 'verloren']
+const stageOrder = ['lead', 'in_kontakt', 'nicht_erreicht', 'angebot', 'gewonnen', 'verloren']
 
 const stageColors: Record<string, string> = {
   nicht_kontaktiert: 'bg-gray-50 border-gray-100',
@@ -62,7 +62,11 @@ const stageTextColors: Record<string, string> = {
 
 export default function Dashboard({ stats, contacts, deals: _deals, onNavigateToContacts }: Props) {
   const recentContacts = [...contacts]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .sort((a, b) => {
+      const dateA = a.lead_date || a.created_at
+      const dateB = b.lead_date || b.created_at
+      return new Date(dateB).getTime() - new Date(dateA).getTime()
+    })
     .slice(0, 6)
 
   const statCards = [
@@ -83,8 +87,9 @@ export default function Dashboard({ stats, contacts, deals: _deals, onNavigateTo
       border: 'border-purple-100',
     },
     {
-      title: 'Abschlusse',
+      title: 'Abschlüsse',
       value: stats.wonDeals,
+      subtitle: (stats.revenue/1000).toFixed(1) + 'k€ Umsatz',
       icon: CheckCircle,
       light: 'bg-emerald-50',
       text: 'text-emerald-600',
@@ -128,6 +133,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, onNavigateTo
               </div>
             </div>
             <div className={`text-3xl font-bold ${card.text}`}>{card.value}</div>
+              {(card as any).subtitle && <div className={`text-xs mt-1 ${card.text} opacity-70 font-semibold`}>{(card as any).subtitle}</div>}
           </div>
         ))}
       </div>
