@@ -11,6 +11,8 @@ export type UserRole = 'admin' | 'sales_rep'
 export type Profile = {
   id: string
   name: string
+  full_name?: string | null
+  email?: string | null
   role: UserRole
   created_at: string
 }
@@ -50,7 +52,9 @@ export type Activity = {
   contact_id: string | null
   deal_id: string | null
   user_id: string | null
+  created_by?: string | null
   type: string
-  text: string | null
+  text?: string | null
+  description?: string | null
   created_at: string
 }
