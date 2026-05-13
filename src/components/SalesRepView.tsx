@@ -53,13 +53,14 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
     setNote('')
     await fetchActivities()
     setSaving(false)
-    noteRef.current?.focus()
+    onClose()
   }
 
   const updateStatus = async (newStatus: string) => {
     setStatus(newStatus)
     await supabase.from('contacts').update({ pipeline_status: newStatus }).eq('id', contact.id)
     onUpdated()
+    onClose()
   }
 
 
