@@ -82,7 +82,7 @@ function TeamView() {
     setLoading(true)
     try {
       const [profilesRes, contactsRes] = await Promise.all([
-        supabase.from('profiles').select(*).eq('role', 'sales_rep'),
+        supabase.from('profiles').select('*').eq('role', 'sales_rep'),
         supabase.from('contacts').select('*'),
       ])
       if (profilesRes.error) console.error('Team-Profile-Fehler:', profilesRes.error)
@@ -108,7 +108,7 @@ function TeamView() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <p className="text-sm text-blue-800 font-medium mb-1">So legst du einen Vertriebler an:</p>
           <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-            <li>Gehe zu <a href="https://supabase.com/dashboard/project/ffylxadhegvvwxrmyktt/auth/users" target="_blank" rel="noreferrer" className="underline font-medium">Supabase â Authentication â Users</span></a></li>
+            <li>Gehe zu <a href="https://supabase.com/dashboard/project/ffylxadhegvvwxrmyktt/auth/users" target="_blank" rel="noreferrer" className="underline font-medium">Supabase â Authentication â Users</a></li>
             <li>Klicke auf <strong>"Add user" â "Create new user"</strong></li>
             <li>Trage E-Mail und Passwort ein und speichere</li>
             <li>Komme hierher zurÃ¼ck und klicke "Neu laden"</li>
@@ -154,7 +154,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true)
   const [showSetPassword, setShowSetPassword] = useState(false)
 
-  const [view, setView] = useState<View.>('dashboard')
+  const [view, setView] = useState<View>('dashboard')
   const [pipelineMode, setPipelineMode] = useState<'kanban' | 'list'>('list')
   const [contacts, setContacts] = useState<Contact[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
