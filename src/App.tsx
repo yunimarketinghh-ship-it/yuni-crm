@@ -23,7 +23,7 @@ function SetPasswordModal({ onDone }: { onDone: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (password !== confirm) { setError('PasswÃ¶rter stimmen nicht Ã¼berein.'); return }
+    if (password !== confirm) { setError('Passwörter stimmen nicht überein.'); return }
     if (password.length < 6) { setError('Passwort muss mind. 6 Zeichen haben.'); return }
     setLoading(true)
     const { error: err } = await supabase.auth.updateUser({ password })
@@ -38,7 +38,7 @@ function SetPasswordModal({ onDone }: { onDone: () => void }) {
           <span className="text-2xl">ð</span>
         </div>
         <h2 className="text-xl font-bold text-center text-gray-900 mb-2">Neues Passwort setzen</h2>
-        <p className="text-sm text-gray-500 text-center mb-6">Setze jetzt dein Passwort fÃ¼r zukÃ¼nftige Anmeldungen.</p>
+        <p className="text-sm text-gray-500 text-center mb-6">Setze jetzt dein Passwort für zukünftige Anmeldungen.</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="password"
@@ -50,7 +50,7 @@ function SetPasswordModal({ onDone }: { onDone: () => void }) {
           />
           <input
             type="password"
-            placeholder="Passwort bestÃ¤tigen"
+            placeholder="Passwort bestätigen"
             value={confirm}
             onChange={e => setConfirm(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -111,7 +111,7 @@ function TeamView() {
             <li>Gehe zu <a href="https://supabase.com/dashboard/project/ffylxadhegvvwxrmyktt/auth/users" target="_blank" rel="noreferrer" className="underline font-medium">Supabase â Authentication â Users</a></li>
             <li>Klicke auf <strong>"Add user" â "Create new user"</strong></li>
             <li>Trage E-Mail und Passwort ein und speichere</li>
-            <li>Komme hierher zurÃ¼ck und klicke "Neu laden"</li>
+            <li>Komme hierher zurück und klicke "Neu laden"</li>
           </ol>
         </div>
         <button onClick={fetchData} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors">
@@ -121,7 +121,7 @@ function TeamView() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Dein Team</h2>
         {loading ? (
-          <p className="text-gray-400 text-sm">LÃ¤dt...</p>
+          <p className="text-gray-400 text-sm">Lädt...</p>
         ) : members.length === 0 ? (
           <p className="text-gray-400 text-sm italic">Noch keine Vertriebler angelegt.</p>
         ) : (
@@ -166,7 +166,7 @@ export default function App() {
   const [salesReps, setSalesReps] = useState<Profile[]>([])
   const [fetchError, setFetchError] = useState<string | null>(null)
 
-  // ââ Auth State Ã¼berwachen ââ
+  // ââ Auth State überwachen ââ
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null)
@@ -300,7 +300,7 @@ export default function App() {
       <nav className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-1 overflow-x-auto">
-            {([{id:'dashboard',label:'Dashboard'},{id:'contacts',label:'Kontakte'},{id:'pipeline',label:'Pipeline'},{id:'activities',label:'AktivitÃ¤ten'},{id:'team',label:'Team'}] as {id:View;label:string}[]).map(tab => (
+            {([{id:'dashboard',label:'Dashboard'},{id:'contacts',label:'Kontakte'},{id:'pipeline',label:'Pipeline'},{id:'activities',label:'Aktivitäten'},{id:'team',label:'Team'}] as {id:View;label:string}[]).map(tab => (
               <button key={tab.id} onClick={() => setView(tab.id)} className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${view===tab.id?'border-indigo-600 text-indigo-600':'border-transparent text-gray-500 hover:text-gray-800'}`}>
                 {tab.id==='team'&&<Users size={14} className="inline mr-1" />}{tab.label}
               </button>
@@ -324,13 +324,13 @@ export default function App() {
                       onClick={() => setPipelineMode('list')}
                       className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${pipelineMode === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                      â° Telefonliste
+                      ☰ Telefonliste
                     </button>
                     <button
                       onClick={() => setPipelineMode('kanban')}
                       className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${pipelineMode === 'kanban' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                      â¬ Kanban
+                      ⬛ Kanban
                     </button>
                   </div>
                 </div>
