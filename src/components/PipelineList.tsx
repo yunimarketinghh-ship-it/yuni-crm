@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Contact, supabase } from '../lib/supabase'
-import { Phone, PhoneOff } from 'lucide-react'
+import { Phone } from 'lucide-react'
 
 // ââ Stage config ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const STAGE_CONFIG: Record<string, { label: string; badge: string; dot: string }> = {
@@ -71,12 +71,6 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
 
   const changeStage = async (id: string, stage: string) => {
     await supabase.from('contacts').update({ pipeline_status: stage }).eq('id', id)
-    onRefresh()
-  }
-
-  const markNichtErreicht = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    await supabase.from('contacts').update({ pipeline_status: 'nicht_erreicht' }).eq('id', id)
     onRefresh()
   }
 
@@ -272,16 +266,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                     {/* Actions */}
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {stage !== 'nicht_erreicht' && (
-                          <button
-                            onClick={e => markNichtErreicht(contact.id, e)}
-                            title="Nicht erreicht markieren"
-                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors whitespace-nowrap"
-                          >
-                            <PhoneOff size={11} />
-                            Nicht erreicht
-                          </button>
-                        )}
+
                         <select
                           value={stage}
                           onChange={e => { e.stopPropagation(); changeStage(contact.id, e.target.value) }}
