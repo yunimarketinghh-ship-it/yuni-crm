@@ -58,8 +58,8 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i]
         const email = row['e-mail-adresse'] || row['email'] || row['e-mail']
-        const name = row['vorname'] || row['name'] || row['firstname']
-        const company = row['name_des_unternehmens'] || row['firma'] || row['company']
+        const name = ([row['vorname'], row['nachname']].filter(Boolean).join(' ').trim()) || row['full_name'] || row['name'] || row['firstname']
+        const company = row['firmenname'] || row['name_des_unternehmens'] || row['company_name'] || row['firma'] || row['company'] || row['unternehmensname'] || row['organization']
         const phone = (row['telefonnummer'] || row['phone'] || '').replace('p:', '')
         const statusMap = row['lead_status'] === 'complete' ? 'interessent' : 'lead'
 
