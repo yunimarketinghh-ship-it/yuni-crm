@@ -90,6 +90,16 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
         }
 
         try {
+          // Check if contact with same phone already exists → update name/company
+          if (phone) {
+            const { data: existing } = await supabase.from('contacts').select('id').eq('phone', phone).maybeSingle()
+            if (existing) {
+              const { error: upErr } = await supabase.from('contacts').update({ name, company: company || null }).eq('id', existing.id)
+              if (upErr) throw upErr
+              successCount++
+              continue
+            }
+          }
           const { error } = await supabase.from('contacts').insert(contact)
           if (error) throw error
           successCount++
