@@ -252,7 +252,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                         >
                           {price > 0 ? (
                             <span className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 px-1.5 py-1 rounded hover:bg-gray-100 transition-colors">
-                              {price.toLocaleString('de-DE')} â¬
+                              {price.toLocaleString('de-DE')} €
                             </span>
                           ) : (
                             <span className="text-xs text-gray-300 italic px-1.5 py-1 rounded hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100">
