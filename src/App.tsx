@@ -286,7 +286,7 @@ export default function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md"><span className="text-white font-bold text-lg">Y</span></div>
-              <div><h1 className="text-xl font-bold text-gray-900 leading-none">YUNI CRM</h1><p className="text-xs text-gray-500">Admin â {profile.name}</p></div>
+              <div><h1 className="text-xl font-bold text-gray-900 leading-none">YUNI CRM</h1><p className="text-xs text-gray-500">Admin • {profile.name}</p></div>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={fetchData} title="Daten neu laden" className="text-gray-500 px-3 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-1.5 text-sm font-medium transition-colors"><RefreshCw size={16} /></button>
