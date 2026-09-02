@@ -10,11 +10,11 @@ import ContactModal from './components/ContactModal'
 import ImportLeads from './components/ImportLeads'
 import Login from './components/Login'
 import SalesRepView from './components/SalesRepView'
-import { Plus, LogOut, Upload, Users, RefreshCw } from 'lucide-react'
+import { Plus, LogOut, Upload, Users, RefreshCw, LayoutGrid, Contact2, GitBranch, MessageSquare, KeyRound, List, Columns } from 'lucide-react'
 
 type View = 'dashboard' | 'contacts' | 'pipeline' | 'activities' | 'team'
 
-// âââ Passwort setzen nach Recovery-Link ââââââââââââââââââââââââââââââââââââââ
+// ─── Passwort setzen nach Recovery-Link ──────────────────────────────────────
 function SetPasswordModal({ onDone }: { onDone: () => void }) {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -32,20 +32,20 @@ function SetPasswordModal({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
-        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-2xl">ð</span>
+    <div className="fixed inset-0 bg-ink-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="card shadow-pop w-full max-w-md p-8 animate-fadeUp">
+        <div className="w-12 h-12 bg-brand-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <KeyRound size={22} className="text-brand-500" />
         </div>
-        <h2 className="text-xl font-bold text-center text-gray-900 mb-2">Neues Passwort setzen</h2>
-        <p className="text-sm text-gray-500 text-center mb-6">Setze jetzt dein Passwort für zukünftige Anmeldungen.</p>
+        <h2 className="text-xl font-bold text-center text-ink-900 mb-2">Neues Passwort setzen</h2>
+        <p className="text-sm text-ink-500 text-center mb-6">Setze jetzt dein Passwort für zukünftige Anmeldungen.</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="password"
             placeholder="Neues Passwort"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="input"
             required
           />
           <input
@@ -53,16 +53,12 @@ function SetPasswordModal({ onDone }: { onDone: () => void }) {
             placeholder="Passwort bestätigen"
             value={confirm}
             onChange={e => setConfirm(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="input"
             required
           />
           {error && <p className="text-red-600 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? 'Wird gespeichertâ¦' : 'Passwort speichern'}
+          <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+            {loading ? 'Wird gespeichert…' : 'Passwort speichern'}
           </button>
         </form>
       </div>
@@ -70,7 +66,7 @@ function SetPasswordModal({ onDone }: { onDone: () => void }) {
   )
 }
 
-// âââ Admin: Vertriebler verwalten ââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Admin: Vertriebler verwalten ────────────────────────────────────────────
 function TeamView() {
   const [members, setMembers] = useState<Profile[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -102,42 +98,42 @@ function TeamView() {
   }, {} as Record<string, number>)
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Neuen Vertriebler anlegen</h2>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-          <p className="text-sm text-blue-800 font-medium mb-1">So legst du einen Vertriebler an:</p>
-          <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-            <li>Gehe zu <a href="https://supabase.com/dashboard/project/ffylxadhegvvwxrmyktt/auth/users" target="_blank" rel="noreferrer" className="underline font-medium">Supabase â Authentication â Users</a></li>
-            <li>Klicke auf <strong>"Add user" â "Create new user"</strong></li>
+    <div className="space-y-6 animate-fadeUp">
+      <div className="card p-6">
+        <h2 className="text-lg font-bold text-ink-900 mb-4">Neuen Vertriebler anlegen</h2>
+        <div className="bg-brand-50 rounded-xl p-4 mb-4">
+          <p className="text-sm text-brand-800 font-semibold mb-1.5">So legst du einen Vertriebler an:</p>
+          <ol className="text-sm text-brand-700 space-y-1 list-decimal list-inside">
+            <li>Gehe zu <a href="https://supabase.com/dashboard/project/ffylxadhegvvwxrmyktt/auth/users" target="_blank" rel="noreferrer" className="underline font-semibold">Supabase → Authentication → Users</a></li>
+            <li>Klicke auf <strong>"Add user" → "Create new user"</strong></li>
             <li>Trage E-Mail und Passwort ein und speichere</li>
             <li>Komme hierher zurück und klicke "Neu laden"</li>
           </ol>
         </div>
-        <button onClick={fetchData} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors">
-          Neu laden
+        <button onClick={fetchData} className="btn-primary">
+          <RefreshCw size={15} /> Neu laden
         </button>
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Dein Team</h2>
+      <div className="card p-6">
+        <h2 className="text-lg font-bold text-ink-900 mb-4">Dein Team</h2>
         {loading ? (
-          <p className="text-gray-400 text-sm">Lädt...</p>
+          <p className="text-ink-400 text-sm">Lädt…</p>
         ) : members.length === 0 ? (
-          <p className="text-gray-400 text-sm italic">Noch keine Vertriebler angelegt.</p>
+          <p className="text-ink-400 text-sm italic">Noch keine Vertriebler angelegt.</p>
         ) : (
           <div className="space-y-3">
             {members.map(m => (
-              <div key={m.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div key={m.id} className="flex items-center justify-between p-4 bg-surface rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">{(m.name || 'V').charAt(0).toUpperCase()}</span>
+                  <div className="avatar w-10 h-10 text-sm">
+                    {(m.name || 'V').charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{m.name || 'Vertriebler'}</p>
-                    <p className="text-xs text-gray-500">{assignedCounts[m.id] || 0} Leads zugewiesen</p>
+                    <p className="font-semibold text-ink-900">{m.name || 'Vertriebler'}</p>
+                    <p className="text-xs text-ink-500 num">{assignedCounts[m.id] || 0} Leads zugewiesen</p>
                   </div>
                 </div>
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">Vertriebler</span>
+                <span className="pill bg-brand-50 text-brand-600">Vertriebler</span>
               </div>
             ))}
           </div>
@@ -147,7 +143,7 @@ function TeamView() {
   )
 }
 
-// âââ Haupt-App ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Haupt-App ───────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -166,7 +162,7 @@ export default function App() {
   const [salesReps, setSalesReps] = useState<Profile[]>([])
   const [fetchError, setFetchError] = useState<string | null>(null)
 
-  // ââ Auth State überwachen ââ
+  // ── Auth State überwachen ──
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null)
@@ -191,7 +187,7 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  // ââ Profil laden wenn User eingeloggt ââ
+  // ── Profil laden wenn User eingeloggt ──
   useEffect(() => {
     if (!user) {
       setAuthLoading(false)
@@ -266,7 +262,7 @@ export default function App() {
   const handleLogout = async () => { await supabase.auth.signOut() }
   const handleSelectContact = (contact: Contact) => { setSelectedContact(contact); setShowContactModal(true) }
 
-  if (authLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" /></div>
+  if (authLoading) return <div className="min-h-[100dvh] flex items-center justify-center"><div className="animate-spin rounded-full h-10 w-10 border-2 border-brand-500 border-t-transparent" /></div>
   if (!user || !profile) return <Login />
   if (showSetPassword) return <SetPasswordModal onDone={() => setShowSetPassword(false)} />
   if (profile.role === 'sales_rep') return <SalesRepView profile={profile} />
@@ -279,58 +275,85 @@ export default function App() {
     pipelineValue: contacts.filter(c => c.pipeline_status === 'lead').length * 850,
   }
 
+  const navItems: { id: View; label: string; icon: React.ReactNode }[] = [
+    { id: 'dashboard',  label: 'Dashboard',   icon: <LayoutGrid size={15} /> },
+    { id: 'contacts',   label: 'Kontakte',    icon: <Contact2 size={15} /> },
+    { id: 'pipeline',   label: 'Pipeline',    icon: <GitBranch size={15} /> },
+    { id: 'activities', label: 'Aktivitäten', icon: <MessageSquare size={15} /> },
+    { id: 'team',       label: 'Team',        icon: <Users size={15} /> },
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md"><span className="text-white font-bold text-lg">Y</span></div>
-              <div><h1 className="text-xl font-bold text-gray-900 leading-none">YUNI CRM</h1><p className="text-xs text-gray-500">Admin • {profile.name}</p></div>
+    <div className="min-h-[100dvh] bg-surface">
+      <header className="sticky top-0 z-40 bg-surface/85 backdrop-blur-lg border-b border-ink-200/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4 py-3">
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <div className="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center shadow-btn"><span className="text-white font-extrabold text-lg">Y</span></div>
+              <div className="hidden md:block">
+                <h1 className="text-base font-extrabold text-ink-900 leading-none tracking-tight">YUNI CRM</h1>
+                <p className="text-xs text-ink-500 mt-0.5">Admin · {profile.name}</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={fetchData} title="Daten neu laden" className="text-gray-500 px-3 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-1.5 text-sm font-medium transition-colors"><RefreshCw size={16} /></button>
-              <button onClick={() => { setSelectedContact(null); setShowContactModal(true) }} className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-1.5 text-sm font-medium transition-colors shadow-sm"><Plus size={16} /><span className="hidden sm:inline">Kontakt</span></button>
-              <button onClick={() => setShowImportModal(true)} className="bg-emerald-600 text-white px-3 py-2 rounded-lg hover:bg-emerald-700 flex items-center gap-1.5 text-sm font-medium transition-colors shadow-sm"><Upload size={16} /><span className="hidden sm:inline">Import</span></button>
-              <button onClick={handleLogout} className="text-gray-500 px-3 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-1.5 text-sm font-medium transition-colors"><LogOut size={16} /><span className="hidden sm:inline">Abmelden</span></button>
+
+            <nav className="flex items-center gap-1 bg-white rounded-full p-1 shadow-card overflow-x-auto">
+              {navItems.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setView(tab.id)}
+                  aria-current={view === tab.id ? 'page' : undefined}
+                  className={`navpill ${view === tab.id ? 'navpill-active' : ''}`}
+                >
+                  {tab.icon}
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              ))}
+            </nav>
+
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <button onClick={fetchData} title="Daten neu laden" className="btn-ghost !px-2.5"><RefreshCw size={16} /></button>
+              <button onClick={() => setShowImportModal(true)} className="btn-soft !px-2.5 sm:!px-4"><Upload size={15} /><span className="hidden lg:inline">Import</span></button>
+              <button onClick={() => { setSelectedContact(null); setShowContactModal(true) }} className="btn-primary !px-2.5 sm:!px-4"><Plus size={15} /><span className="hidden lg:inline">Kontakt</span></button>
+              <button onClick={handleLogout} title="Abmelden" className="btn-ghost !px-2.5"><LogOut size={16} /></button>
             </div>
           </div>
         </div>
       </header>
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-1 overflow-x-auto">
-            {([{id:'dashboard',label:'Dashboard'},{id:'contacts',label:'Kontakte'},{id:'pipeline',label:'Pipeline'},{id:'activities',label:'Aktivitäten'},{id:'team',label:'Team'}] as {id:View;label:string}[]).map(tab => (
-              <button key={tab.id} onClick={() => setView(tab.id)} className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${view===tab.id?'border-indigo-600 text-indigo-600':'border-transparent text-gray-500 hover:text-gray-800'}`}>
-                {tab.id==='team'&&<Users size={14} className="inline mr-1" />}{tab.label}
-              </button>
-            ))}
+
+      {fetchError && (
+        <div className="max-w-7xl mx-auto px-4 pt-4 sm:px-6 lg:px-8">
+          <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-center justify-between">
+            <p className="text-red-700 text-sm font-medium">{fetchError}</p>
+            <button onClick={fetchData} className="text-red-600 text-sm font-semibold underline">Erneut</button>
           </div>
         </div>
-      </nav>
-      {fetchError&&<div className="max-w-7xl mx-auto px-4 pt-4 sm:px-6 lg:px-8"><div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between"><p className="text-red-700 text-sm">â ï¸ {fetchError}</p><button onClick={fetchData} className="text-red-600 text-sm underline">Erneut</button></div></div>}
+      )}
+
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        {dataLoading?(
-          <div className="flex flex-col items-center justify-center py-24 gap-3"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" /><p className="text-gray-500 text-sm">Daten werden geladen...</p></div>
-        ):(
+        {dataLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <div className="animate-spin rounded-full h-10 w-10 border-2 border-brand-500 border-t-transparent" />
+            <p className="text-ink-500 text-sm">Daten werden geladen…</p>
+          </div>
+        ) : (
           <>
-            {view==='dashboard'&&<Dashboard stats={stats} contacts={contacts} deals={deals} activities={activities} onNavigateToContacts={()=>setView('contacts')} />}
-            {view==='contacts'&&<ContactTable contacts={contacts} onSelectContact={handleSelectContact} onRefresh={fetchContacts} salesReps={salesReps} />}
-            {view==='pipeline'&&(
-              <div>
+            {view === 'dashboard' && <Dashboard stats={stats} contacts={contacts} deals={deals} activities={activities} userName={profile.name} onNavigateToContacts={() => setView('contacts')} />}
+            {view === 'contacts' && <ContactTable contacts={contacts} onSelectContact={handleSelectContact} onRefresh={fetchContacts} salesReps={salesReps} />}
+            {view === 'pipeline' && (
+              <div className="animate-fadeUp">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-full shadow-card">
                     <button
                       onClick={() => setPipelineMode('list')}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${pipelineMode === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                      className={`navpill !py-1.5 ${pipelineMode === 'list' ? 'navpill-active' : ''}`}
                     >
-                      ☰ Telefonliste
+                      <List size={14} /> Telefonliste
                     </button>
                     <button
                       onClick={() => setPipelineMode('kanban')}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${pipelineMode === 'kanban' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                      className={`navpill !py-1.5 ${pipelineMode === 'kanban' ? 'navpill-active' : ''}`}
                     >
-                      ⬛ Kanban
+                      <Columns size={14} /> Kanban
                     </button>
                   </div>
                 </div>
@@ -340,13 +363,13 @@ export default function App() {
                 }
               </div>
             )}
-            {view==='activities'&&<ActivityLog activities={activities} contacts={contacts} onRefresh={fetchActivities} />}
-            {view==='team'&&<TeamView />}
+            {view === 'activities' && <ActivityLog activities={activities} contacts={contacts} onRefresh={fetchActivities} />}
+            {view === 'team' && <TeamView />}
           </>
         )}
       </main>
-      {showContactModal&&<ContactModal contact={selectedContact} onClose={()=>{setShowContactModal(false);setSelectedContact(null)}} onSave={()=>{fetchData();setShowContactModal(false);setSelectedContact(null)}} />}
-      {showImportModal&&<ImportLeads onClose={()=>setShowImportModal(false)} onComplete={fetchData} />}
+      {showContactModal && <ContactModal contact={selectedContact} onClose={() => { setShowContactModal(false); setSelectedContact(null) }} onSave={() => { fetchData(); setShowContactModal(false); setSelectedContact(null) }} />}
+      {showImportModal && <ImportLeads onClose={() => setShowImportModal(false)} onComplete={fetchData} />}
     </div>
   )
 }
