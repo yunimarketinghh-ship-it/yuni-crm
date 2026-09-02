@@ -3,7 +3,7 @@ import { Contact, Deal, supabase } from '../lib/supabase'
 import { ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react'
 
 const COLUMNS = [
-  { key: 'lead',           label: 'Lead',           dot: 'bg-brand-500',   dropKey: 'lead' },
+  { key: 'lead',           label: 'Neu',            dot: 'bg-brand-500',   dropKey: 'lead' },
   { key: 'in_kontakt',     label: 'In Kontakt',     dot: 'bg-sky-500',     dropKey: 'in_kontakt' },
   { key: 'nicht_erreicht', label: 'Nicht erreicht', dot: 'bg-orange-500',  dropKey: 'nicht_erreicht' },
   { key: 'angebot',        label: 'Angebot',        dot: 'bg-amber-500',   dropKey: 'angebot' },

@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Contact, supabase } from '../lib/supabase'
-import { Phone, Search, Inbox, ArrowUpDown } from 'lucide-react'
+import { Contact, Profile, supabase } from '../lib/supabase'
+import AssignModal from './AssignModal'
+import { Phone, Search, Inbox, ArrowUpDown, ChevronDown, UserPlus, Trash2, X } from 'lucide-react'
 
 // ── Stage config ──────────────────────────────────────────────────────────────
 const STAGE_CONFIG: Record<string, { label: string; badge: string; dot: string; hint: string }> = {
-  lead:            { label: 'Lead',           badge: 'bg-brand-50 text-brand-600',     dot: 'bg-brand-500',   hint: 'Neu reingekommen, noch nicht angerufen' },
+  lead:            { label: 'Neu',            badge: 'bg-brand-50 text-brand-600',     dot: 'bg-brand-500',   hint: 'Neu reingekommen, noch nicht angerufen' },
   in_kontakt:      { label: 'In Kontakt',     badge: 'bg-sky-50 text-sky-600',         dot: 'bg-sky-500',     hint: 'Gespräch läuft' },
   nicht_erreicht:  { label: 'Nicht erreicht', badge: 'bg-orange-50 text-orange-600',   dot: 'bg-orange-500',  hint: 'Angerufen, aber nicht erreicht — nochmal probieren' },
   angebot:         { label: 'Angebot',        badge: 'bg-amber-50 text-amber-600',     dot: 'bg-amber-500',   hint: 'Angebot ist raus, wartet auf Antwort' },
@@ -33,16 +34,23 @@ type Props = {
   onRefresh: () => void
   onSelectContact: (c: Contact) => void
   initialStage?: string | null
+  salesReps?: Profile[]   // wenn gesetzt (Admin): Vertriebler-Filter + Mehrfachauswahl
 }
 
-export default function PipelineList({ contacts, onRefresh, onSelectContact, initialStage }: Props) {
+export default function PipelineList({ contacts, onRefresh, onSelectContact, initialStage, salesReps }: Props) {
   const [activeStage, setActiveStage] = useState(initialStage && STAGE_KEYS.includes(initialStage) ? initialStage : 'all')
   const [search, setSearch]           = useState('')
   const [sort, setSort]               = useState<SortKey>('date_desc')
+  const [filterRep, setFilterRep]     = useState('alle')
+  const [selected, setSelected]       = useState<Set<string>>(new Set())
+  const [showAssign, setShowAssign]   = useState(false)
+  const [deleting, setDeleting]       = useState(false)
   const [editingNote, setEditingNote] = useState<string | null>(null)
   const [noteValue, setNoteValue]     = useState('')
   const [editingPrice, setEditingPrice] = useState<string | null>(null)
   const [priceValue, setPriceValue]   = useState('')
+
+  const adminTools = !!salesReps
 
   // ── Counts ──────────────────────────────────────────────────────────────────
   const counts: Record<string, number> = { all: contacts.length }
@@ -57,11 +65,15 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
     .filter(c => {
       const stage = normalizeStage(c.pipeline_status)
       if (activeStage !== 'all' && stage !== activeStage) return false
+      if (filterRep !== 'alle') {
+        if (filterRep === 'unassigned' ? !!c.assigned_to : c.assigned_to !== filterRep) return false
+      }
       if (search) {
         const q = search.toLowerCase()
         return (
           (c.name    || '').toLowerCase().includes(q) ||
           (c.company || '').toLowerCase().includes(q) ||
+          (c.email   || '').toLowerCase().includes(q) ||
           (c.phone   || '').toLowerCase().includes(q)
         )
       }
@@ -77,6 +89,32 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
 
   const filteredValue = filtered.reduce((s, c) => s + (c.price || 0), 0)
   const activeCfg = activeStage !== 'all' ? STAGE_CONFIG[activeStage] : null
+
+  const repName = (id: string | null) => {
+    if (!id) return null
+    return salesReps?.find(r => r.id === id)?.name || 'Unbekannt'
+  }
+
+  // ── Auswahl ──────────────────────────────────────────────────────────────────
+  const allSelected = filtered.length > 0 && filtered.every(c => selected.has(c.id))
+  const toggleAll = () => {
+    setSelected(allSelected ? new Set() : new Set(filtered.map(c => c.id)))
+  }
+  const toggleOne = (id: string) => {
+    const next = new Set(selected)
+    next.has(id) ? next.delete(id) : next.add(id)
+    setSelected(next)
+  }
+
+  const handleDelete = async () => {
+    if (!selected.size) return
+    if (!confirm(`${selected.size} Lead(s) wirklich löschen?`)) return
+    setDeleting(true)
+    await supabase.from('contacts').delete().in('id', Array.from(selected))
+    setSelected(new Set())
+    onRefresh()
+    setDeleting(false)
+  }
 
   // ── Supabase actions ─────────────────────────────────────────────────────────
   const saveNote = async (id: string, value: string) => {
@@ -99,25 +137,42 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
 
   // ── Tabs config ───────────────────────────────────────────────────────────────
   const tabs = [
-    { key: 'all', label: 'Alle', hint: 'Alle Kontakte in der Pipeline' },
+    { key: 'all', label: 'Alle', hint: 'Alle Leads' },
     ...STAGE_KEYS.map(k => ({ key: k, label: STAGE_CONFIG[k].label, hint: STAGE_CONFIG[k].hint })),
   ]
 
   return (
     <div className="card overflow-hidden">
 
-      {/* ── Search + Sort ────────────────────────────────────────────────────── */}
+      {/* ── Search + Filter + Sort ───────────────────────────────────────────── */}
       <div className="px-5 py-3.5 border-b border-ink-100 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Name, Firma oder Telefon…"
+            placeholder="Name, Firma, E-Mail oder Telefon…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="input-soft !py-2 !pl-9"
           />
         </div>
+        {adminTools && (
+          <div className="relative">
+            <select
+              value={filterRep}
+              onChange={e => setFilterRep(e.target.value)}
+              title="Nach Vertriebler filtern"
+              className="text-[13px] font-semibold text-ink-700 border border-ink-200 rounded-lg pl-2.5 pr-7 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer appearance-none"
+            >
+              <option value="alle">Alle Vertriebler</option>
+              <option value="unassigned">Nicht zugewiesen</option>
+              {salesReps!.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+            <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
+          </div>
+        )}
         <div className="relative flex items-center gap-1.5">
           <ArrowUpDown size={13} className="text-ink-400" />
           <select
@@ -132,7 +187,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
         </div>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-xs text-ink-500 font-semibold bg-surface px-3 py-1.5 rounded-full num">
-            {filtered.length} Kontakte
+            {filtered.length} Leads
           </span>
           <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-3 py-1.5 rounded-full num">
             {(filteredValue / 1000).toFixed(1)} k€
@@ -174,22 +229,50 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
         </div>
       )}
 
+      {/* ── Bulk-Aktionen ────────────────────────────────────────────────────── */}
+      {adminTools && selected.size > 0 && (
+        <div className="px-5 py-2.5 bg-brand-50/60 border-b border-brand-100 flex items-center gap-2.5 animate-fadeUp">
+          <span className="text-sm font-semibold text-ink-700 num">{selected.size} ausgewählt</span>
+          <button onClick={() => setShowAssign(true)} className="btn-primary !py-1.5 !px-3 text-xs">
+            <UserPlus size={13} /> Zuweisen
+          </button>
+          <button onClick={handleDelete} disabled={deleting} className="btn-danger !py-1.5 !px-3 text-xs">
+            <Trash2 size={13} /> Löschen
+          </button>
+          <button onClick={() => setSelected(new Set())} className="btn-ghost !py-1.5 !px-3 text-xs ml-auto">
+            <X size={13} /> Aufheben
+          </button>
+        </div>
+      )}
+
       {/* ── Table / Empty state ─────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <div className="py-20 text-center text-ink-400">
           <Inbox size={32} className="mx-auto mb-3 opacity-40" />
-          <p className="text-sm">Keine Kontakte gefunden</p>
+          <p className="text-sm">Keine Leads gefunden</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink-100">
-                <th className="th w-40">Status</th>
+                {adminTools && (
+                  <th className="px-5 py-3.5 text-left w-10">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={toggleAll}
+                      title="Alle auswählen"
+                      className="rounded border-ink-300 text-brand-500 focus:ring-brand-400 cursor-pointer"
+                    />
+                  </th>
+                )}
+                <th className={`th w-40 ${adminTools ? '!px-2' : ''}`}>Status</th>
                 <th className="th">Name / Firma</th>
                 <th className="th w-44">Telefon</th>
                 <th className="th w-24">Datum</th>
-                <th className="th min-w-[180px]">Notiz</th>
+                {adminTools && <th className="th w-28 hidden lg:table-cell">Vertriebler</th>}
+                <th className="th min-w-[160px]">Notiz</th>
                 <th className="th w-28">Deal-Wert</th>
                 <th className="th w-44">Status ändern</th>
               </tr>
@@ -201,30 +284,43 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
                 const date  = new Date(contact.lead_date || contact.created_at)
                   .toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
                 const price = contact.price ?? 0
+                const rep = adminTools ? repName(contact.assigned_to) : null
 
                 return (
                   <tr
                     key={contact.id}
                     onClick={() => onSelectContact(contact)}
-                    title="Kontakt öffnen"
-                    className="hover:bg-surface group transition-colors cursor-pointer"
+                    title="Lead öffnen"
+                    className={`hover:bg-surface group transition-colors cursor-pointer ${selected.has(contact.id) ? 'bg-brand-50/60' : ''}`}
                   >
 
+                    {/* Checkbox */}
+                    {adminTools && (
+                      <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(contact.id)}
+                          onChange={() => toggleOne(contact.id)}
+                          className="rounded border-ink-300 text-brand-500 focus:ring-brand-400 cursor-pointer"
+                        />
+                      </td>
+                    )}
+
                     {/* Stage badge */}
-                    <td className="td">
+                    <td className={`td ${adminTools ? '!px-2' : ''}`}>
                       <span className={`pill ${cfg.badge}`} title={cfg.hint}>
                         <span className={`pill-dot ${cfg.dot}`} />
                         {cfg.label}
                       </span>
                     </td>
 
-                    {/* Name + Company */}
+                    {/* Name + Company/Email */}
                     <td className="td">
                       <p className="font-semibold text-ink-900 group-hover:text-brand-600 transition-colors leading-tight">
                         {contact.name}
                       </p>
-                      {contact.company && (
-                        <p className="text-xs text-ink-400 mt-0.5">{contact.company}</p>
+                      {(contact.company || contact.email) && (
+                        <p className="text-xs text-ink-400 mt-0.5 truncate max-w-[220px]">{contact.company || contact.email}</p>
                       )}
                     </td>
 
@@ -247,8 +343,19 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
                     {/* Date */}
                     <td className="td text-xs text-ink-400 num">{date}</td>
 
+                    {/* Vertriebler */}
+                    {adminTools && (
+                      <td className="td hidden lg:table-cell">
+                        {rep ? (
+                          <span className="text-xs font-semibold text-ink-700">{rep}</span>
+                        ) : (
+                          <span className="text-xs text-ink-300">–</span>
+                        )}
+                      </td>
+                    )}
+
                     {/* Note — inline edit */}
-                    <td className="td max-w-[200px]" onClick={e => e.stopPropagation()}>
+                    <td className="td max-w-[180px]" onClick={e => e.stopPropagation()}>
                       {editingNote === contact.id ? (
                         <input
                           autoFocus
@@ -270,7 +377,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
                           className="text-left w-full"
                         >
                           {contact.notes ? (
-                            <span className="block text-xs text-ink-700 truncate max-w-[180px] px-1.5 py-1 rounded-lg hover:bg-ink-100 transition-colors">
+                            <span className="block text-xs text-ink-700 truncate max-w-[160px] px-1.5 py-1 rounded-lg hover:bg-ink-100 transition-colors">
                               {contact.notes}
                             </span>
                           ) : (
@@ -323,7 +430,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
                       <select
                         value={stage}
                         onChange={e => changeStage(contact.id, e.target.value)}
-                        title="Status dieses Kontakts ändern"
+                        title="Status dieses Leads ändern"
                         className="text-xs font-semibold border border-ink-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer hover:border-brand-300 transition-colors"
                       >
                         {STAGE_KEYS.map(k => (
@@ -338,6 +445,14 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
             </tbody>
           </table>
         </div>
+      )}
+
+      {showAssign && (
+        <AssignModal
+          contactIds={Array.from(selected)}
+          onClose={() => setShowAssign(false)}
+          onDone={() => { setSelected(new Set()); onRefresh() }}
+        />
       )}
     </div>
   )

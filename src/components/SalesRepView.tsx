@@ -6,7 +6,7 @@ import PipelineList from './PipelineList'
 
 const STATUS_LABELS: Record<string, { label: string; color: string; activeColor: string; icon: React.ReactNode }> = {
   nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-ink-100 text-ink-500', activeColor: 'bg-ink-700 text-white', icon: <Clock className="w-3 h-3" /> },
-  lead: { label: 'Lead', color: 'bg-brand-50 text-brand-600', activeColor: 'bg-brand-500 text-white', icon: <TrendingUp className="w-3 h-3" /> },
+  lead: { label: 'Neu', color: 'bg-brand-50 text-brand-600', activeColor: 'bg-brand-500 text-white', icon: <TrendingUp className="w-3 h-3" /> },
   in_kontakt: { label: 'In Kontakt', color: 'bg-sky-50 text-sky-600', activeColor: 'bg-sky-500 text-white', icon: <MessageSquare className="w-3 h-3" /> },
   nicht_erreicht: { label: 'Nicht erreicht', color: 'bg-orange-50 text-orange-600', activeColor: 'bg-orange-500 text-white', icon: <AlertCircle className="w-3 h-3" /> },
   angebot: { label: 'Angebot', color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white', icon: <Plus className="w-3 h-3" /> },

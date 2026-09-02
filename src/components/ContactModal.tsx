@@ -4,7 +4,7 @@ import { X, Save, Trash2, UserMinus } from 'lucide-react'
 
 const PIPELINE_OPTIONS = [
   { value: 'nicht_kontaktiert', label: 'Nicht kontaktiert' },
-  { value: 'lead',              label: 'Lead' },
+  { value: 'lead',              label: 'Neu' },
   { value: 'in_kontakt',        label: 'In Kontakt' },
   { value: 'nicht_erreicht',    label: 'Nicht erreicht' },
   { value: 'angebot',           label: 'Angebot' },
@@ -78,7 +78,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
 
   const handleDelete = async () => {
     if (!contact) return
-    if (!confirm('Kontakt wirklich endgültig löschen?')) return
+    if (!confirm('Lead wirklich endgültig löschen?')) return
     setDeleting(true)
     await supabase.from('contacts').delete().eq('id', contact.id)
     onSave()
@@ -86,7 +86,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
 
   const handleUnassign = async () => {
     if (!contact) return
-    if (!confirm('Zuweisung entfernen? Der Kontakt bleibt erhalten, wird aber keinem Mitarbeiter mehr zugewiesen.')) return
+    if (!confirm('Zuweisung entfernen? Der Lead bleibt erhalten, wird aber keinem Mitarbeiter mehr zugewiesen.')) return
     setUnassigning(true)
     await supabase.from('contacts').update({ assigned_to: null }).eq('id', contact.id)
     setUnassigning(false)
@@ -99,7 +99,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-ink-100">
           <h2 className="text-lg font-bold text-ink-900 tracking-tight">
-            {contact ? 'Kontakt bearbeiten' : 'Neuer Kontakt'}
+            {contact ? 'Lead bearbeiten' : 'Neuer Lead'}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-surface rounded-xl transition-colors">
             <X className="w-5 h-5 text-ink-400" />
@@ -166,7 +166,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
           {contact && (
             <button onClick={handleDelete} disabled={deleting} className="btn-danger w-full">
               <Trash2 className="w-4 h-4" />
-              {deleting ? 'Wird gelöscht…' : 'Kontakt endgültig löschen'}
+              {deleting ? 'Wird gelöscht…' : 'Lead endgültig löschen'}
             </button>
           )}
         </div>

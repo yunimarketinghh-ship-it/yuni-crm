@@ -44,7 +44,7 @@ const statusDots: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   nicht_kontaktiert: 'Nicht kontaktiert',
-  lead:              'Lead',
+  lead:              'Neu',
   in_kontakt:        'In Kontakt',
   nicht_erreicht:    'Nicht erreicht',
   angebot:           'Angebot',
@@ -76,8 +76,8 @@ export default function Dashboard({ stats, contacts, deals: _deals, userName, on
     .slice(0, 6)
 
   const statCards = [
-    { title: 'Kontakte gesamt', value: String(stats.totalContacts), icon: Users,       chip: 'bg-brand-50 text-brand-500',     hint: 'Alle Kontakte öffnen',      action: () => onNavigateToContacts?.() },
-    { title: 'Aktive Leads',    value: String(stats.activeLeads),   icon: Target,      chip: 'bg-sky-50 text-sky-500',         hint: 'Leads in der Pipeline öffnen', action: () => onGoToPipeline?.('lead') },
+    { title: 'Leads gesamt',    value: String(stats.totalContacts), icon: Users,       chip: 'bg-brand-50 text-brand-500',     hint: 'Alle Leads öffnen',         action: () => onNavigateToContacts?.() },
+    { title: 'Neue Leads',      value: String(stats.activeLeads),   icon: Target,      chip: 'bg-sky-50 text-sky-500',         hint: 'Neue, unbearbeitete Leads öffnen', action: () => onGoToPipeline?.('lead') },
     { title: 'Abschlüsse',      value: String(stats.wonDeals),      icon: CheckCircle, chip: 'bg-emerald-50 text-emerald-500', hint: 'Gewonnene Deals öffnen',    action: () => onGoToPipeline?.('gewonnen'), subtitle: (stats.revenue / 1000).toFixed(1) + ' k€ Umsatz' },
     { title: 'Pipeline-Wert',   value: `${(stats.pipelineValue / 1000).toFixed(1)} k€`, icon: Wallet, chip: 'bg-amber-50 text-amber-500', hint: 'Pipeline öffnen', action: () => onGoToPipeline?.() },
   ]
@@ -254,7 +254,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, userName, on
           </div>
           <div className="space-y-1.5">
             {stagesWithContacts.length === 0 ? (
-              <p className="text-sm text-ink-400 text-center py-4">Keine Kontakte vorhanden</p>
+              <p className="text-sm text-ink-400 text-center py-4">Keine Leads vorhanden</p>
             ) : (
               stagesWithContacts.map(({ stage, contacts: stageContacts }) => {
                 const value = stageContacts.reduce((s, c) => s + (c.price || 0), 0)
@@ -292,7 +292,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, userName, on
         <div className="card p-6 lg:col-span-3 animate-fadeUp" style={{ animationDelay: '240ms' }}>
           <div className="flex items-center gap-2 mb-5">
             <Clock size={17} className="text-brand-500" />
-            <h2 className="font-bold text-ink-900">Neueste Kontakte</h2>
+            <h2 className="font-bold text-ink-900">Neueste Leads</h2>
             {onNavigateToContacts && (
               <button onClick={onNavigateToContacts} className="ml-auto text-xs font-semibold text-brand-500 hover:text-brand-700 inline-flex items-center gap-1">
                 Alle ansehen <ArrowUpRight size={13} />
@@ -302,7 +302,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, userName, on
           {recentContacts.length === 0 ? (
             <div className="text-center py-8 text-ink-400">
               <Users size={32} className="mx-auto mb-2 opacity-40" />
-              <p className="text-sm">Noch keine Kontakte</p>
+              <p className="text-sm">Noch keine Leads</p>
             </div>
           ) : (
             <div className="divide-y divide-ink-100">
@@ -344,7 +344,7 @@ export default function Dashboard({ stats, contacts, deals: _deals, userName, on
         <div className="card p-6 lg:col-span-2 animate-fadeUp" style={{ animationDelay: '300ms' }}>
           <h2 className="font-bold text-ink-900 mb-5">Status-Verteilung</h2>
           {contacts.length === 0 ? (
-            <p className="text-ink-400 text-sm text-center py-4">Noch keine Kontakte vorhanden</p>
+            <p className="text-ink-400 text-sm text-center py-4">Noch keine Leads vorhanden</p>
           ) : (
             <div className="space-y-1">
               {stageOrder.map(status => {

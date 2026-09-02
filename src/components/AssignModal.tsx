@@ -46,7 +46,7 @@ export default function AssignModal({ contactIds, onClose, onDone }: Props) {
             </div>
             <div>
               <h2 className="text-lg font-bold text-ink-900 tracking-tight">Vertriebler zuweisen</h2>
-              <p className="text-sm text-ink-500 num">{contactIds.length} Kontakt{contactIds.length !== 1 ? 'e' : ''} ausgewählt</p>
+              <p className="text-sm text-ink-500 num">{contactIds.length} Lead{contactIds.length !== 1 ? 's' : ''} ausgewählt</p>
             </div>
           </div>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-700 hover:bg-surface rounded-xl p-2 transition-colors">
