@@ -194,6 +194,7 @@ export default function SalesRepView({ profile }: Props) {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Contact | null>(null)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'contacts'>('dashboard')
+  const [listStage, setListStage] = useState<string | null>(null)
 
   const fetchContacts = useCallback(async () => {
     setLoading(true)
@@ -282,15 +283,19 @@ export default function SalesRepView({ profile }: Props) {
             deals={[]}
             activities={activities}
             userName={profile.full_name || profile.name}
-            onNavigateToContacts={() => setActiveTab('contacts')}
+            onNavigateToContacts={() => { setListStage(null); setActiveTab('contacts') }}
+            onSelectContact={setSelected}
+            onGoToPipeline={(stage?: string) => { setListStage(stage || null); setActiveTab('contacts') }}
           />
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-6 sm:px-6 lg:px-8">
           <PipelineList
+            key={listStage || 'all'}
             contacts={contacts}
             onRefresh={fetchContacts}
             onSelectContact={setSelected}
+            initialStage={listStage}
           />
         </div>
       )}

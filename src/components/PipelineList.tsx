@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { Contact, supabase } from '../lib/supabase'
-import { Phone, Search, Inbox } from 'lucide-react'
+import { Phone, Search, Inbox, ArrowUpDown } from 'lucide-react'
 
 // ── Stage config ──────────────────────────────────────────────────────────────
-const STAGE_CONFIG: Record<string, { label: string; badge: string; dot: string }> = {
-  lead:            { label: 'Lead',           badge: 'bg-brand-50 text-brand-600',     dot: 'bg-brand-500' },
-  in_kontakt:      { label: 'In Kontakt',     badge: 'bg-sky-50 text-sky-600',         dot: 'bg-sky-500' },
-  nicht_erreicht:  { label: 'Nicht erreicht', badge: 'bg-orange-50 text-orange-600',   dot: 'bg-orange-500' },
-  angebot:         { label: 'Angebot',        badge: 'bg-amber-50 text-amber-600',     dot: 'bg-amber-500' },
-  gewonnen:        { label: 'Gewonnen',       badge: 'bg-emerald-50 text-emerald-600', dot: 'bg-emerald-500' },
-  verloren:        { label: 'Verloren',       badge: 'bg-red-50 text-red-500',         dot: 'bg-red-500' },
+const STAGE_CONFIG: Record<string, { label: string; badge: string; dot: string; hint: string }> = {
+  lead:            { label: 'Lead',           badge: 'bg-brand-50 text-brand-600',     dot: 'bg-brand-500',   hint: 'Neu reingekommen, noch nicht angerufen' },
+  in_kontakt:      { label: 'In Kontakt',     badge: 'bg-sky-50 text-sky-600',         dot: 'bg-sky-500',     hint: 'Gespräch läuft' },
+  nicht_erreicht:  { label: 'Nicht erreicht', badge: 'bg-orange-50 text-orange-600',   dot: 'bg-orange-500',  hint: 'Angerufen, aber nicht erreicht — nochmal probieren' },
+  angebot:         { label: 'Angebot',        badge: 'bg-amber-50 text-amber-600',     dot: 'bg-amber-500',   hint: 'Angebot ist raus, wartet auf Antwort' },
+  gewonnen:        { label: 'Gewonnen',       badge: 'bg-emerald-50 text-emerald-600', dot: 'bg-emerald-500', hint: 'Abgeschlossen — Kunde' },
+  verloren:        { label: 'Verloren',       badge: 'bg-red-50 text-red-500',         dot: 'bg-red-500',     hint: 'Kein Interesse oder abgesprungen' },
 }
 
 const STAGE_KEYS = ['lead', 'in_kontakt', 'nicht_erreicht', 'angebot', 'gewonnen', 'verloren']
@@ -19,15 +19,26 @@ function normalizeStage(s: string | null | undefined): string {
   return s
 }
 
+type SortKey = 'date_desc' | 'date_asc' | 'name_asc' | 'price_desc'
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'date_desc',  label: 'Neueste zuerst' },
+  { value: 'date_asc',   label: 'Älteste zuerst' },
+  { value: 'name_asc',   label: 'Name A–Z' },
+  { value: 'price_desc', label: 'Höchster Deal-Wert' },
+]
+
 type Props = {
   contacts: Contact[]
   onRefresh: () => void
   onSelectContact: (c: Contact) => void
+  initialStage?: string | null
 }
 
-export default function PipelineList({ contacts, onRefresh, onSelectContact }: Props) {
-  const [activeStage, setActiveStage] = useState('all')
+export default function PipelineList({ contacts, onRefresh, onSelectContact, initialStage }: Props) {
+  const [activeStage, setActiveStage] = useState(initialStage && STAGE_KEYS.includes(initialStage) ? initialStage : 'all')
   const [search, setSearch]           = useState('')
+  const [sort, setSort]               = useState<SortKey>('date_desc')
   const [editingNote, setEditingNote] = useState<string | null>(null)
   const [noteValue, setNoteValue]     = useState('')
   const [editingPrice, setEditingPrice] = useState<string | null>(null)
@@ -40,20 +51,32 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
     counts[s] = (counts[s] || 0) + 1
   })
 
-  // ── Filter ───────────────────────────────────────────────────────────────────
-  const filtered = contacts.filter(c => {
-    const stage = normalizeStage(c.pipeline_status)
-    if (activeStage !== 'all' && stage !== activeStage) return false
-    if (search) {
-      const q = search.toLowerCase()
-      return (
-        (c.name    || '').toLowerCase().includes(q) ||
-        (c.company || '').toLowerCase().includes(q) ||
-        (c.phone   || '').toLowerCase().includes(q)
-      )
-    }
-    return true
-  })
+  // ── Filter + Sort ─────────────────────────────────────────────────────────────
+  const getDate = (c: Contact) => new Date(c.lead_date || c.created_at).getTime()
+  const filtered = contacts
+    .filter(c => {
+      const stage = normalizeStage(c.pipeline_status)
+      if (activeStage !== 'all' && stage !== activeStage) return false
+      if (search) {
+        const q = search.toLowerCase()
+        return (
+          (c.name    || '').toLowerCase().includes(q) ||
+          (c.company || '').toLowerCase().includes(q) ||
+          (c.phone   || '').toLowerCase().includes(q)
+        )
+      }
+      return true
+    })
+    .sort((a, b) => {
+      if (sort === 'date_desc')  return getDate(b) - getDate(a)
+      if (sort === 'date_asc')   return getDate(a) - getDate(b)
+      if (sort === 'name_asc')   return a.name.localeCompare(b.name, 'de')
+      if (sort === 'price_desc') return (b.price || 0) - (a.price || 0)
+      return 0
+    })
+
+  const filteredValue = filtered.reduce((s, c) => s + (c.price || 0), 0)
+  const activeCfg = activeStage !== 'all' ? STAGE_CONFIG[activeStage] : null
 
   // ── Supabase actions ─────────────────────────────────────────────────────────
   const saveNote = async (id: string, value: string) => {
@@ -76,16 +99,16 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
 
   // ── Tabs config ───────────────────────────────────────────────────────────────
   const tabs = [
-    { key: 'all', label: 'Alle' },
-    ...STAGE_KEYS.map(k => ({ key: k, label: STAGE_CONFIG[k].label })),
+    { key: 'all', label: 'Alle', hint: 'Alle Kontakte in der Pipeline' },
+    ...STAGE_KEYS.map(k => ({ key: k, label: STAGE_CONFIG[k].label, hint: STAGE_CONFIG[k].hint })),
   ]
 
   return (
     <div className="card overflow-hidden">
 
-      {/* ── Search bar ───────────────────────────────────────────────────────── */}
-      <div className="px-5 py-3.5 border-b border-ink-100 flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+      {/* ── Search + Sort ────────────────────────────────────────────────────── */}
+      <div className="px-5 py-3.5 border-b border-ink-100 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
           <input
             type="text"
@@ -95,9 +118,26 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
             className="input-soft !py-2 !pl-9"
           />
         </div>
-        <span className="ml-auto text-xs text-ink-500 font-semibold bg-surface px-3 py-1.5 rounded-full num">
-          {filtered.length} Kontakte
-        </span>
+        <div className="relative flex items-center gap-1.5">
+          <ArrowUpDown size={13} className="text-ink-400" />
+          <select
+            value={sort}
+            onChange={e => setSort(e.target.value as SortKey)}
+            className="text-[13px] font-semibold text-ink-700 border border-ink-200 rounded-lg pl-2 pr-7 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer appearance-none"
+          >
+            {SORT_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs text-ink-500 font-semibold bg-surface px-3 py-1.5 rounded-full num">
+            {filtered.length} Kontakte
+          </span>
+          <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-3 py-1.5 rounded-full num">
+            {(filteredValue / 1000).toFixed(1)} k€
+          </span>
+        </div>
       </div>
 
       {/* ── Stage tabs ────────────────────────────────────────────────────────── */}
@@ -106,12 +146,14 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
           <button
             key={tab.key}
             onClick={() => setActiveStage(tab.key)}
+            title={tab.hint}
             className={`flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold whitespace-nowrap rounded-full transition-colors ${
               activeStage === tab.key
                 ? 'bg-brand-500 text-white shadow-btn'
                 : 'text-ink-500 hover:text-ink-700 hover:bg-surface'
             }`}
           >
+            {tab.key !== 'all' && <span className={`pill-dot ${activeStage === tab.key ? 'bg-white' : STAGE_CONFIG[tab.key].dot}`} />}
             {tab.label}
             <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold num ${
               activeStage === tab.key
@@ -124,6 +166,14 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
         ))}
       </div>
 
+      {/* ── Erklärung der aktiven Stage ─────────────────────────────────────── */}
+      {activeCfg && (
+        <div className="px-5 py-2.5 bg-surface/60 border-b border-ink-100 flex items-center gap-2">
+          <span className={`pill-dot ${activeCfg.dot}`} />
+          <p className="text-xs text-ink-500"><span className="font-bold text-ink-700">{activeCfg.label}:</span> {activeCfg.hint}</p>
+        </div>
+      )}
+
       {/* ── Table / Empty state ─────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <div className="py-20 text-center text-ink-400">
@@ -135,13 +185,13 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink-100">
-                <th className="th w-36">Stage</th>
+                <th className="th w-40">Status</th>
                 <th className="th">Name / Firma</th>
                 <th className="th w-44">Telefon</th>
                 <th className="th w-24">Datum</th>
                 <th className="th min-w-[180px]">Notiz</th>
                 <th className="th w-28">Deal-Wert</th>
-                <th className="th w-52">Aktionen</th>
+                <th className="th w-44">Status ändern</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
@@ -153,11 +203,16 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                 const price = contact.price ?? 0
 
                 return (
-                  <tr key={contact.id} className="hover:bg-surface group transition-colors">
+                  <tr
+                    key={contact.id}
+                    onClick={() => onSelectContact(contact)}
+                    title="Kontakt öffnen"
+                    className="hover:bg-surface group transition-colors cursor-pointer"
+                  >
 
                     {/* Stage badge */}
                     <td className="td">
-                      <span className={`pill ${cfg.badge}`}>
+                      <span className={`pill ${cfg.badge}`} title={cfg.hint}>
                         <span className={`pill-dot ${cfg.dot}`} />
                         {cfg.label}
                       </span>
@@ -165,23 +220,21 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
 
                     {/* Name + Company */}
                     <td className="td">
-                      <button onClick={() => onSelectContact(contact)} className="text-left">
-                        <p className="font-semibold text-ink-900 hover:text-brand-600 transition-colors leading-tight">
-                          {contact.name}
-                        </p>
-                        {contact.company && (
-                          <p className="text-xs text-ink-400 mt-0.5">{contact.company}</p>
-                        )}
-                      </button>
+                      <p className="font-semibold text-ink-900 group-hover:text-brand-600 transition-colors leading-tight">
+                        {contact.name}
+                      </p>
+                      {contact.company && (
+                        <p className="text-xs text-ink-400 mt-0.5">{contact.company}</p>
+                      )}
                     </td>
 
                     {/* Phone */}
-                    <td className="td">
+                    <td className="td" onClick={e => e.stopPropagation()}>
                       {contact.phone ? (
                         <a
                           href={`tel:${contact.phone}`}
-                          onClick={e => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 text-ink-700 bg-surface hover:bg-brand-50 hover:text-brand-600 px-2.5 py-1.5 rounded-lg transition-colors text-xs font-semibold num"
+                          title="Anrufen"
+                          className="inline-flex items-center gap-1.5 text-ink-700 bg-surface hover:bg-emerald-50 hover:text-emerald-600 px-2.5 py-1.5 rounded-lg transition-colors text-xs font-semibold num"
                         >
                           <Phone size={11} />
                           {contact.phone}
@@ -195,7 +248,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                     <td className="td text-xs text-ink-400 num">{date}</td>
 
                     {/* Note — inline edit */}
-                    <td className="td max-w-[200px]">
+                    <td className="td max-w-[200px]" onClick={e => e.stopPropagation()}>
                       {editingNote === contact.id ? (
                         <input
                           autoFocus
@@ -213,6 +266,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                       ) : (
                         <button
                           onClick={() => { setEditingNote(contact.id); setNoteValue(contact.notes || '') }}
+                          title="Notiz bearbeiten"
                           className="text-left w-full"
                         >
                           {contact.notes ? (
@@ -220,7 +274,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                               {contact.notes}
                             </span>
                           ) : (
-                            <span className="block text-xs text-ink-300 px-1.5 py-1 rounded-lg hover:bg-ink-100 transition-colors opacity-0 group-hover:opacity-100">
+                            <span className="block text-xs text-ink-300 px-1.5 py-1 rounded-lg hover:bg-ink-100 hover:text-ink-500 transition-colors">
                               + Notiz
                             </span>
                           )}
@@ -229,7 +283,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                     </td>
 
                     {/* Price — inline edit */}
-                    <td className="td">
+                    <td className="td" onClick={e => e.stopPropagation()}>
                       {editingPrice === contact.id ? (
                         <input
                           autoFocus
@@ -248,6 +302,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                       ) : (
                         <button
                           onClick={() => { setEditingPrice(contact.id); setPriceValue(String(price || '')) }}
+                          title="Deal-Wert bearbeiten"
                           className="text-left"
                         >
                           {price > 0 ? (
@@ -255,7 +310,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                               {price.toLocaleString('de-DE')} €
                             </span>
                           ) : (
-                            <span className="text-xs text-ink-300 px-1.5 py-1 rounded-lg hover:bg-ink-100 transition-colors opacity-0 group-hover:opacity-100">
+                            <span className="text-xs text-ink-300 px-1.5 py-1 rounded-lg hover:bg-ink-100 hover:text-ink-500 transition-colors">
                               + Wert
                             </span>
                           )}
@@ -263,20 +318,18 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                       )}
                     </td>
 
-                    {/* Actions */}
-                    <td className="td">
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <select
-                          value={stage}
-                          onChange={e => { e.stopPropagation(); changeStage(contact.id, e.target.value) }}
-                          onClick={e => e.stopPropagation()}
-                          className="text-xs border border-ink-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
-                        >
-                          {STAGE_KEYS.map(k => (
-                            <option key={k} value={k}>{STAGE_CONFIG[k].label}</option>
-                          ))}
-                        </select>
-                      </div>
+                    {/* Status ändern — immer sichtbar */}
+                    <td className="td" onClick={e => e.stopPropagation()}>
+                      <select
+                        value={stage}
+                        onChange={e => changeStage(contact.id, e.target.value)}
+                        title="Status dieses Kontakts ändern"
+                        className="text-xs font-semibold border border-ink-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer hover:border-brand-300 transition-colors"
+                      >
+                        {STAGE_KEYS.map(k => (
+                          <option key={k} value={k}>{STAGE_CONFIG[k].label}</option>
+                        ))}
+                      </select>
                     </td>
 
                   </tr>
