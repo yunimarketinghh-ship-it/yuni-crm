@@ -152,6 +152,7 @@ export default function App() {
 
   const [view, setView] = useState<View>('dashboard')
   const [pipelineMode, setPipelineMode] = useState<'kanban' | 'list'>('list')
+  const [pipelineStage, setPipelineStage] = useState<string | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
@@ -261,6 +262,11 @@ export default function App() {
 
   const handleLogout = async () => { await supabase.auth.signOut() }
   const handleSelectContact = (contact: Contact) => { setSelectedContact(contact); setShowContactModal(true) }
+  const handleGoToPipeline = (stage?: string) => {
+    setPipelineStage(stage || null)
+    setPipelineMode('list')
+    setView('pipeline')
+  }
 
   if (authLoading) return <div className="min-h-[100dvh] flex items-center justify-center"><div className="animate-spin rounded-full h-10 w-10 border-2 border-brand-500 border-t-transparent" /></div>
   if (!user || !profile) return <Login />
@@ -300,7 +306,7 @@ export default function App() {
               {navItems.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setView(tab.id)}
+                  onClick={() => { if (tab.id === 'pipeline') setPipelineStage(null); setView(tab.id) }}
                   aria-current={view === tab.id ? 'page' : undefined}
                   className={`navpill ${view === tab.id ? 'navpill-active' : ''}`}
                 >
@@ -337,7 +343,7 @@ export default function App() {
           </div>
         ) : (
           <>
-            {view === 'dashboard' && <Dashboard stats={stats} contacts={contacts} deals={deals} activities={activities} userName={profile.name} onNavigateToContacts={() => setView('contacts')} />}
+            {view === 'dashboard' && <Dashboard stats={stats} contacts={contacts} deals={deals} activities={activities} userName={profile.name} onNavigateToContacts={() => setView('contacts')} onSelectContact={handleSelectContact} onGoToPipeline={handleGoToPipeline} />}
             {view === 'contacts' && <ContactTable contacts={contacts} onSelectContact={handleSelectContact} onRefresh={fetchContacts} salesReps={salesReps} />}
             {view === 'pipeline' && (
               <div className="animate-fadeUp">
@@ -358,7 +364,7 @@ export default function App() {
                   </div>
                 </div>
                 {pipelineMode === 'list'
-                  ? <PipelineList contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} />
+                  ? <PipelineList key={pipelineStage || 'all'} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} initialStage={pipelineStage} />
                   : <KanbanBoard deals={deals} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} />
                 }
               </div>
