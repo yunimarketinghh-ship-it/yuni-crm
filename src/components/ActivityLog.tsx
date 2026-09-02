@@ -51,64 +51,66 @@ export default function ActivityLog({ activities, contacts, onRefresh }: Props) 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 animate-fadeUp">
       {/* Add New Activity */}
-      <form onSubmit={handleAddActivity} className="bg-white rounded-lg border border-gray-200 p-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <form onSubmit={handleAddActivity} className="card p-6">
+        <label className="label !text-sm !text-ink-900 font-bold mb-3">
           Neue Aktivität
         </label>
-        <div className="flex gap-2">
+        <div className="flex gap-2.5">
           <input
             type="text"
             value={newActivityText}
             onChange={e => setNewActivityText(e.target.value)}
             placeholder="Was ist gerade passiert?"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+            className="input flex-1"
           />
           <button
             type="submit"
             disabled={saving || !newActivityText.trim()}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
+            className="btn-primary !px-6"
           >
-            {saving ? 'Speichert...' : 'Hinzufügen'}
+            {saving ? 'Speichert…' : 'Hinzufügen'}
           </button>
         </div>
       </form>
 
       {/* Activity Timeline */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {activities.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-            <MessageSquare className="mx-auto text-gray-400 mb-2" size={32} />
-            <p className="text-gray-500">Keine Aktivitäten vorhanden</p>
+          <div className="card text-center py-12">
+            <MessageSquare className="mx-auto text-ink-300 mb-2" size={32} />
+            <p className="text-ink-500 text-sm">Keine Aktivitäten vorhanden</p>
           </div>
         ) : (
           activities.map(activity => (
             <div
               key={activity.id}
-              className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+              className="card !rounded-xl p-4 hover:shadow-pop transition-shadow"
             >
               <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MessageSquare size={16} className="text-indigo-600" />
-                    <span className="font-medium text-gray-900">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <MessageSquare size={13} className="text-brand-500" />
+                    </div>
+                    <span className="font-semibold text-ink-900 text-sm truncate">
                       {getContactName(activity.contact_id)}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-ink-400 flex-shrink-0">
                       {formatDistanceToNow(new Date(activity.created_at), {
                         addSuffix: true,
                         locale: de,
                       })}
                     </span>
                   </div>
-                  <p className="text-gray-700">{activity.text}</p>
+                  <p className="text-ink-700 text-sm pl-9">{activity.text}</p>
                 </div>
                 <button
                   onClick={() => handleDeleteActivity(activity.id)}
-                  className="ml-4 text-gray-400 hover:text-red-600 transition-colors"
+                  className="ml-4 p-1.5 text-ink-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>

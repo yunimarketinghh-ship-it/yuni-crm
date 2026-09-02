@@ -5,16 +5,16 @@ import Dashboard from './Dashboard'
 import PipelineList from './PipelineList'
 
 const STATUS_LABELS: Record<string, { label: string; color: string; activeColor: string; icon: React.ReactNode }> = {
-  nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-gray-100 text-gray-700', activeColor: 'bg-gray-600 text-white', icon: <Clock className="w-3 h-3" /> },
-  lead: { label: 'Lead', color: 'bg-blue-100 text-blue-700', activeColor: 'bg-blue-600 text-white', icon: <TrendingUp className="w-3 h-3" /> },
-  in_kontakt: { label: 'In Kontakt', color: 'bg-indigo-100 text-indigo-700', activeColor: 'bg-indigo-600 text-white', icon: <MessageSquare className="w-3 h-3" /> },
-  nicht_erreicht: { label: 'Nicht erreicht', color: 'bg-orange-100 text-orange-700', activeColor: 'bg-orange-500 text-white', icon: <AlertCircle className="w-3 h-3" /> },
-  angebot: { label: 'Angebot', color: 'bg-yellow-100 text-yellow-700', activeColor: 'bg-yellow-500 text-white', icon: <Plus className="w-3 h-3" /> },
-  gewonnen: { label: 'Gewonnen', color: 'bg-green-100 text-green-700', activeColor: 'bg-green-600 text-white', icon: <CheckCircle className="w-3 h-3" /> },
-  verloren: { label: 'Verloren', color: 'bg-red-100 text-red-700', activeColor: 'bg-red-600 text-white', icon: <X className="w-3 h-3" /> },
+  nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-ink-100 text-ink-500', activeColor: 'bg-ink-700 text-white', icon: <Clock className="w-3 h-3" /> },
+  lead: { label: 'Lead', color: 'bg-brand-50 text-brand-600', activeColor: 'bg-brand-500 text-white', icon: <TrendingUp className="w-3 h-3" /> },
+  in_kontakt: { label: 'In Kontakt', color: 'bg-sky-50 text-sky-600', activeColor: 'bg-sky-500 text-white', icon: <MessageSquare className="w-3 h-3" /> },
+  nicht_erreicht: { label: 'Nicht erreicht', color: 'bg-orange-50 text-orange-600', activeColor: 'bg-orange-500 text-white', icon: <AlertCircle className="w-3 h-3" /> },
+  angebot: { label: 'Angebot', color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white', icon: <Plus className="w-3 h-3" /> },
+  gewonnen: { label: 'Gewonnen', color: 'bg-emerald-50 text-emerald-600', activeColor: 'bg-emerald-500 text-white', icon: <CheckCircle className="w-3 h-3" /> },
+  verloren: { label: 'Verloren', color: 'bg-red-50 text-red-500', activeColor: 'bg-red-500 text-white', icon: <X className="w-3 h-3" /> },
 }
 
-// âââ ContactDetail ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── ContactDetail ───────────────────────────────────────────────────────────
 interface ContactDetailProps {
   contact: Contact
   onClose: () => void
@@ -65,35 +65,35 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col shadow-2xl">
+    <div className="fixed inset-0 bg-ink-900/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white w-full sm:max-w-lg sm:rounded-2.5xl rounded-t-2.5xl max-h-[92vh] flex flex-col shadow-pop animate-fadeUp">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+        <div className="flex items-center justify-between p-5 border-b border-ink-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-sm">{contact.name.charAt(0).toUpperCase()}</span>
+            <div className="avatar w-10 h-10 text-sm">
+              {contact.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">{contact.name}</h3>
-              {contact.company && <p className="text-xs text-gray-500">{contact.company}</p>}
+              <h3 className="font-bold text-ink-900">{contact.name}</h3>
+              {contact.company && <p className="text-xs text-ink-500">{contact.company}</p>}
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="w-5 h-5 text-gray-400" />
+          <button onClick={onClose} className="p-2 hover:bg-surface rounded-xl transition-colors">
+            <X className="w-5 h-5 text-ink-400" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Quick action buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             {contact.phone && (
-              <a href={`tel:${contact.phone}`} className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium text-sm transition-colors">
+              <a href={`tel:${contact.phone}`} className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold text-sm transition-colors shadow-btn">
                 <PhoneCall className="w-4 h-4" />
                 Anrufen
               </a>
             )}
             {contact.email && (
-              <a href={`mailto:${contact.email}`} className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-medium text-sm transition-colors">
+              <a href={`mailto:${contact.email}`} className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-50 hover:bg-brand-100 text-brand-600 rounded-xl font-semibold text-sm transition-colors">
                 <Mail className="w-4 h-4" />
                 E-Mail
               </a>
@@ -103,35 +103,35 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
           {/* Contact info */}
           <div className="space-y-2">
             {contact.phone && (
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span className="text-sm text-gray-600">{contact.phone}</span>
+              <div className="flex items-center gap-3 p-3 bg-surface rounded-xl">
+                <Phone className="w-4 h-4 text-ink-400 flex-shrink-0" />
+                <span className="text-sm text-ink-700 num">{contact.phone}</span>
               </div>
             )}
             {contact.email && (
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span className="text-sm text-gray-600">{contact.email}</span>
+              <div className="flex items-center gap-3 p-3 bg-surface rounded-xl">
+                <Mail className="w-4 h-4 text-ink-400 flex-shrink-0" />
+                <span className="text-sm text-ink-700">{contact.email}</span>
               </div>
             )}
             {contact.company && (
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span className="text-sm text-gray-600">{contact.company}</span>
+              <div className="flex items-center gap-3 p-3 bg-surface rounded-xl">
+                <Building2 className="w-4 h-4 text-ink-400 flex-shrink-0" />
+                <span className="text-sm text-ink-700">{contact.company}</span>
               </div>
             )}
           </div>
 
           {/* Status selector */}
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Status setzen</p>
+            <p className="label uppercase tracking-wider">Status setzen</p>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(STATUS_LABELS).map(([key, val]) => (
                 <button
                   key={key}
                   onClick={() => updateStatus(key)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                    status === key ? val.activeColor + ' ring-2 ring-offset-1 ring-current' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    status === key ? val.activeColor + ' shadow-btn' : 'bg-surface text-ink-500 hover:bg-ink-100'
                   }`}
                 >
                   {val.icon}
@@ -143,34 +143,34 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
 
           {/* Note input */}
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Gespraechsnotiz</p>
+            <p className="label uppercase tracking-wider">Gesprächsnotiz</p>
             <textarea
               ref={noteRef}
               value={note}
               onChange={e => setNote(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && e.ctrlKey && saveNote()}
-              placeholder={"Was wurde besprochen? Rueckruf wann? Interesse woran?\n(Strg+Enter zum Speichern)"}
+              placeholder={"Was wurde besprochen? Rückruf wann? Interesse woran?\n(Strg+Enter zum Speichern)"}
               rows={3}
-              className="w-full px-3 py-2.5 bg-gray-50 rounded-xl text-sm border border-gray-200 focus:outline-none focus:border-indigo-300 resize-none"
+              className="input-soft resize-none"
             />
             <button
               onClick={saveNote}
               disabled={saving || !note.trim()}
-              className="mt-2 w-full py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium disabled:opacity-40 hover:bg-indigo-700 transition-colors"
+              className="btn-primary w-full mt-2.5"
             >
-              {saving ? 'Wird gespeichert...' : 'Notiz speichern'}
+              {saving ? 'Wird gespeichert…' : 'Notiz speichern'}
             </button>
           </div>
 
           {/* Activity log */}
           {activities.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Verlauf</p>
+              <p className="label uppercase tracking-wider">Verlauf</p>
               <div className="space-y-2">
                 {activities.map(act => (
-                  <div key={act.id} className="p-3 bg-gray-50 rounded-xl border-l-2 border-indigo-200">
-                    <p className="text-sm text-gray-700">{act.description}</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                  <div key={act.id} className="p-3.5 bg-surface rounded-xl border-l-2 border-brand-300">
+                    <p className="text-sm text-ink-700">{act.description}</p>
+                    <p className="text-xs text-ink-400 mt-1 num">
                       {new Date(act.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -184,10 +184,10 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
   )
 }
 
-// âââ Types âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Types ───────────────────────────────────────────────────────────────────
 type Props = { profile: Profile }
 
-// âââ SalesRepView ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── SalesRepView ────────────────────────────────────────────────────────────
 export default function SalesRepView({ profile }: Props) {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
@@ -233,56 +233,60 @@ export default function SalesRepView({ profile }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <div className="min-h-[100dvh] bg-surface">
+      <header className="sticky top-0 z-40 bg-surface/85 backdrop-blur-lg border-b border-ink-200/60 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">Y</span>
+            <div className="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center shadow-btn">
+              <span className="text-white font-extrabold text-base">Y</span>
             </div>
-            <div>
-              <h1 className="text-sm font-semibold text-gray-900">YUNI CRM</h1>
-              <p className="text-xs text-gray-500">{profile.full_name || profile.email}</p>
+            <div className="hidden sm:block">
+              <h1 className="text-sm font-extrabold text-ink-900 leading-none tracking-tight">YUNI CRM</h1>
+              <p className="text-xs text-ink-500 mt-0.5">{profile.full_name || profile.name || profile.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-white rounded-full p-1 shadow-card">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`navpill !py-1.5 ${activeTab === 'dashboard' ? 'navpill-active' : ''}`}
             >
               Dashboard
             </button>
             <button
               onClick={() => setActiveTab('contacts')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'contacts' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`navpill !py-1.5 ${activeTab === 'contacts' ? 'navpill-active' : ''}`}
             >
-              Telefonliste{contacts.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-700 rounded-full px-1.5 py-0.5">{contacts.length}</span>}
+              Telefonliste
+              {contacts.length > 0 && (
+                <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold num ${activeTab === 'contacts' ? 'bg-white/20 text-white' : 'bg-surface text-ink-500'}`}>
+                  {contacts.length}
+                </span>
+              )}
             </button>
           </div>
-          <button onClick={handleSignOut} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+          <button onClick={handleSignOut} title="Abmelden" className="btn-ghost !px-2.5">
             <LogOut className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      </header>
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : activeTab === 'dashboard' ? (
-        <Dashboard
-          stats={stats}
-          contacts={contacts}
-          deals={[]}
-          activities={activities}
-          onNavigateToContacts={() => setActiveTab('contacts')}
-        />
+        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+          <Dashboard
+            stats={stats}
+            contacts={contacts}
+            deals={[]}
+            activities={activities}
+            userName={profile.full_name || profile.name}
+            onNavigateToContacts={() => setActiveTab('contacts')}
+          />
+        </div>
       ) : (
-        <div className="max-w-7xl mx-auto px-4 pt-4 pb-6">
+        <div className="max-w-7xl mx-auto px-4 pt-4 pb-6 sm:px-6 lg:px-8">
           <PipelineList
             contacts={contacts}
             onRefresh={fetchContacts}

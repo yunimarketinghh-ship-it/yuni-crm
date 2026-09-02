@@ -1,8 +1,21 @@
 import { useState } from 'react'
-import { Lock, Mail, CheckCircle } from 'lucide-react'
+import { Lock, Mail, CheckCircle, ArrowLeft } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 type Mode = 'login' | 'forgot' | 'sent'
+
+function AuthShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-[100dvh] bg-surface flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Weiche Farbflächen im Hintergrund */}
+      <div className="absolute -top-32 -left-24 w-96 h-96 rounded-full bg-brand-200/50 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -right-24 w-[28rem] h-[28rem] rounded-full bg-sky-200/40 blur-3xl pointer-events-none" />
+      <div className="w-full max-w-md relative animate-fadeUp">
+        {children}
+      </div>
+    </div>
+  )
+}
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -35,153 +48,139 @@ export default function Login() {
 
   if (mode === 'sent') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-lg shadow-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="text-green-600" size={32} />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">E-Mail gesendet!</h2>
-            <p className="text-gray-600 mb-2">
-              Wir haben eine E-Mail an <strong>{email}</strong> geschickt.
-            </p>
-            <p className="text-gray-500 text-sm mb-6">
-              Bitte schaue in deinen Posteingang (und Spam-Ordner) und klicke auf den Link,
-              um ein neues Passwort zu setzen.
-            </p>
-            <button
-              onClick={() => { setMode('login'); setError('') }}
-              className="text-indigo-600 text-sm hover:underline"
-            >
-              Zurück zum Login
-            </button>
+      <AuthShell>
+        <div className="card shadow-pop p-8 text-center">
+          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <CheckCircle className="text-emerald-500" size={26} />
           </div>
+          <h2 className="text-xl font-extrabold text-ink-900 mb-2 tracking-tight">E-Mail gesendet</h2>
+          <p className="text-ink-700 text-sm mb-2">
+            Wir haben eine E-Mail an <strong>{email}</strong> geschickt.
+          </p>
+          <p className="text-ink-500 text-sm mb-6">
+            Bitte schaue in deinen Posteingang (und Spam-Ordner) und klicke auf den Link,
+            um ein neues Passwort zu setzen.
+          </p>
+          <button
+            onClick={() => { setMode('login'); setError('') }}
+            className="text-brand-500 text-sm font-semibold hover:text-brand-700 inline-flex items-center gap-1.5"
+          >
+            <ArrowLeft size={14} /> Zurück zum Login
+          </button>
         </div>
-      </div>
+      </AuthShell>
     )
   }
 
   if (mode === 'forgot') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-lg shadow-2xl p-8">
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-3xl">Y</span>
-              </div>
-            </div>
-            <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">Passwort zurücksetzen</h1>
-            <p className="text-center text-gray-600 mb-8 text-sm">
-              Wir senden dir einen Link an deine E-Mail-Adresse.
-            </p>
-            <form onSubmit={handleForgot} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">E-Mail</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => { setEmail(e.target.value); setError('') }}
-                    placeholder="ihre@email.de"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                    autoFocus
-                  />
-                </div>
-              </div>
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Wird gesendet...' : 'Reset-Link senden'}
-              </button>
-            </form>
-            <div className="text-center mt-4">
-              <button
-                onClick={() => { setMode('login'); setError('') }}
-                className="text-indigo-600 text-sm hover:underline"
-              >
-                ← Zurück zum Login
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-2xl p-8">
+      <AuthShell>
+        <div className="card shadow-pop p-8">
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-3xl">Y</span>
+            <div className="w-14 h-14 bg-brand-500 rounded-2xl flex items-center justify-center shadow-btn">
+              <span className="text-white font-extrabold text-2xl">Y</span>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">YUNI CRM</h1>
-          <p className="text-center text-gray-600 mb-8">Bitte melden Sie sich an</p>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <h1 className="text-xl font-extrabold text-center text-ink-900 mb-2 tracking-tight">Passwort zurücksetzen</h1>
+          <p className="text-center text-ink-500 mb-8 text-sm">
+            Wir senden dir einen Link an deine E-Mail-Adresse.
+          </p>
+          <form onSubmit={handleForgot} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">E-Mail</label>
+              <label className="label">E-Mail</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" size={17} />
                 <input
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="ihre@email.de"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                  onChange={e => { setEmail(e.target.value); setError('') }}
+                  placeholder="deine@email.de"
+                  className="input !pl-10"
                   autoFocus
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Passwort</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setError('') }}
-                  placeholder="Passwort eingeben..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                />
-              </div>
-            </div>
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-50 border border-red-100 text-red-700 px-4 py-3 rounded-xl text-sm">
                 {error}
               </div>
             )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Anmelden...' : 'Anmelden'}
+            <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+              {loading ? 'Wird gesendet…' : 'Reset-Link senden'}
             </button>
           </form>
-          <div className="text-center mt-4">
+          <div className="text-center mt-5">
             <button
-              onClick={() => { setMode('forgot'); setError('') }}
-              className="text-indigo-600 text-sm hover:underline"
+              onClick={() => { setMode('login'); setError('') }}
+              className="text-brand-500 text-sm font-semibold hover:text-brand-700 inline-flex items-center gap-1.5"
             >
-              Passwort vergessen?
+              <ArrowLeft size={14} /> Zurück zum Login
             </button>
           </div>
-          <p className="text-center text-gray-500 text-xs mt-6">
-            YUNI CRM - Sicheres Lead-Management System
-          </p>
         </div>
+      </AuthShell>
+    )
+  }
+
+  return (
+    <AuthShell>
+      <div className="card shadow-pop p-8">
+        <div className="flex justify-center mb-6">
+          <div className="w-14 h-14 bg-brand-500 rounded-2xl flex items-center justify-center shadow-btn">
+            <span className="text-white font-extrabold text-2xl">Y</span>
+          </div>
+        </div>
+        <h1 className="text-2xl font-extrabold text-center text-ink-900 mb-1.5 tracking-tight">Willkommen zurück</h1>
+        <p className="text-center text-ink-500 mb-8 text-sm">Melde dich bei YUNI CRM an</p>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="label">E-Mail</label>
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" size={17} />
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="deine@email.de"
+                className="input !pl-10"
+                autoFocus
+              />
+            </div>
+          </div>
+          <div>
+            <label className="label">Passwort</label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" size={17} />
+              <input
+                type="password"
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError('') }}
+                placeholder="Passwort eingeben…"
+                className="input !pl-10"
+              />
+            </div>
+          </div>
+          {error && (
+            <div className="bg-red-50 border border-red-100 text-red-700 px-4 py-3 rounded-xl text-sm">
+              {error}
+            </div>
+          )}
+          <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+            {loading ? 'Anmelden…' : 'Anmelden'}
+          </button>
+        </form>
+        <div className="text-center mt-5">
+          <button
+            onClick={() => { setMode('forgot'); setError('') }}
+            className="text-brand-500 text-sm font-semibold hover:text-brand-700"
+          >
+            Passwort vergessen?
+          </button>
+        </div>
+        <p className="text-center text-ink-400 text-xs mt-8">
+          YUNI CRM · Sicheres Lead-Management
+        </p>
       </div>
-    </div>
+    </AuthShell>
   )
 }

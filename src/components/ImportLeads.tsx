@@ -123,72 +123,74 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
 
   if (result) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="fixed inset-0 bg-ink-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="card shadow-pop p-6 max-w-md w-full animate-fadeUp">
           <div className="flex items-center gap-3 mb-4">
             {result.failed === 0 ? (
               <>
-                <CheckCircle size={24} className="text-green-600" />
-                <h2 className="text-xl font-bold text-gray-900">Import erfolgreich!</h2>
+                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                  <CheckCircle size={20} className="text-emerald-500" />
+                </div>
+                <h2 className="text-lg font-bold text-ink-900 tracking-tight">Import abgeschlossen</h2>
               </>
             ) : (
               <>
-                <AlertCircle size={24} className="text-yellow-600" />
-                <h2 className="text-xl font-bold text-gray-900">Import teilweise erfolgt</h2>
+                <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+                  <AlertCircle size={20} className="text-amber-500" />
+                </div>
+                <h2 className="text-lg font-bold text-ink-900 tracking-tight">Import teilweise erfolgt</h2>
               </>
             )}
           </div>
-          <div className="bg-gray-50 rounded p-4 mb-4">
-            <p className="text-green-700 font-semibold">Erfolg: {result.success} Leads importiert</p>
-            {result.failed > 0 && <p className="text-red-700 font-semibold">Fehler: {result.failed} fehlgeschlagen</p>}
+          <div className="bg-surface rounded-xl p-4 mb-4">
+            <p className="text-emerald-600 font-semibold text-sm num">{result.success} Leads importiert</p>
+            {result.failed > 0 && <p className="text-red-600 font-semibold text-sm num mt-1">{result.failed} fehlgeschlagen</p>}
           </div>
           {result.errors.length > 0 && (
-            <div className="bg-red-50 rounded p-3 mb-4">
-              <p className="text-sm font-semibold text-red-800 mb-2">Fehler:</p>
-              <ul className="text-xs text-red-700 space-y-1">
+            <div className="bg-red-50 border border-red-100 rounded-xl p-3.5 mb-4">
+              <p className="text-sm font-semibold text-red-700 mb-2">Fehler:</p>
+              <ul className="text-xs text-red-600 space-y-1">
                 {result.errors.map((err, idx) => (
                   <li key={idx}>{err}</li>
                 ))}
               </ul>
             </div>
           )}
-          <div className="flex gap-2">
-            <button
-              onClick={() => { onComplete(); onClose() }}
-              className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-            >
-              Abgeschlossen
-            </button>
-          </div>
+          <button
+            onClick={() => { onComplete(); onClose() }}
+            className="btn-primary w-full"
+          >
+            Abgeschlossen
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Leads importieren</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <X size={24} />
+    <div className="fixed inset-0 bg-ink-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="card shadow-pop p-6 max-w-md w-full animate-fadeUp">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-ink-900 tracking-tight">Leads importieren</h2>
+          <button onClick={onClose} className="p-2 text-ink-400 hover:text-ink-700 hover:bg-surface rounded-xl transition-colors">
+            <X size={20} />
           </button>
         </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Produkttyp</label>
+            <label className="label">Produkttyp</label>
             <select
               value={productType}
               onChange={(e) => setProductType(e.target.value as 'standard' | 'c3')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="input cursor-pointer"
             >
-              <option value="standard">Standard Erklaervideo - 500 EUR</option>
-              <option value="c3">C3 3D Video - 850 EUR</option>
+              <option value="standard">Standard Erklärvideo – 500 €</option>
+              <option value="c3">C3 3D Video – 850 €</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">CSV-Datei</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+            <label className="label">CSV-Datei</label>
+            <div className="border-2 border-dashed border-ink-200 hover:border-brand-300 rounded-xl p-6 text-center transition-colors">
               <input
                 type="file"
                 accept=".csv"
@@ -197,30 +199,30 @@ export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
                 id="file-input"
               />
               <label htmlFor="file-input" className="cursor-pointer">
-                <Upload size={24} className="mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-gray-600">
-                  {file ? file.name : 'CSV-Datei auswaehlen'}
+                <Upload size={22} className="mx-auto mb-2 text-ink-400" />
+                <p className="text-sm text-ink-700 font-medium">
+                  {file ? file.name : 'CSV-Datei auswählen'}
                 </p>
               </label>
             </div>
           </div>
-          <div className="bg-blue-50 rounded p-3 text-xs text-blue-800">
+          <div className="bg-brand-50 rounded-xl p-3.5 text-xs text-brand-800">
             <p className="font-semibold mb-1">CSV-Format erforderlich:</p>
             <p>Spalten: Email, Vorname, Firma, Telefon, Status</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+              className="flex-1 px-4 py-2.5 border border-ink-200 rounded-xl text-sm font-semibold text-ink-700 hover:bg-surface transition-colors"
             >
               Abbrechen
             </button>
             <button
               onClick={handleImport}
               disabled={!file || loading}
-              className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="btn-primary flex-1"
             >
-              {loading ? 'Importiere...' : 'Importieren'}
+              {loading ? 'Importiere…' : 'Importieren'}
             </button>
           </div>
         </div>

@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { Contact, supabase } from '../lib/supabase'
-import { Phone } from 'lucide-react'
+import { Phone, Search, Inbox } from 'lucide-react'
 
-// ââ Stage config ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Stage config ──────────────────────────────────────────────────────────────
 const STAGE_CONFIG: Record<string, { label: string; badge: string; dot: string }> = {
-  lead:            { label: 'Lead',           badge: 'bg-violet-100 text-violet-700', dot: 'bg-violet-500' },
-  in_kontakt:      { label: 'In Kontakt',     badge: 'bg-blue-100 text-blue-700',    dot: 'bg-blue-500'   },
-  nicht_erreicht:  { label: 'Nicht erreicht', badge: 'bg-amber-100 text-amber-700',  dot: 'bg-amber-500'  },
-  angebot:         { label: 'Angebot',        badge: 'bg-orange-100 text-orange-700',dot: 'bg-orange-500' },
-  gewonnen:        { label: 'Gewonnen',       badge: 'bg-green-100 text-green-700',  dot: 'bg-green-500'  },
-  verloren:        { label: 'Verloren',       badge: 'bg-red-100 text-red-700',      dot: 'bg-red-500'    },
+  lead:            { label: 'Lead',           badge: 'bg-brand-50 text-brand-600',     dot: 'bg-brand-500' },
+  in_kontakt:      { label: 'In Kontakt',     badge: 'bg-sky-50 text-sky-600',         dot: 'bg-sky-500' },
+  nicht_erreicht:  { label: 'Nicht erreicht', badge: 'bg-orange-50 text-orange-600',   dot: 'bg-orange-500' },
+  angebot:         { label: 'Angebot',        badge: 'bg-amber-50 text-amber-600',     dot: 'bg-amber-500' },
+  gewonnen:        { label: 'Gewonnen',       badge: 'bg-emerald-50 text-emerald-600', dot: 'bg-emerald-500' },
+  verloren:        { label: 'Verloren',       badge: 'bg-red-50 text-red-500',         dot: 'bg-red-500' },
 }
 
 const STAGE_KEYS = ['lead', 'in_kontakt', 'nicht_erreicht', 'angebot', 'gewonnen', 'verloren']
@@ -33,14 +33,14 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
   const [editingPrice, setEditingPrice] = useState<string | null>(null)
   const [priceValue, setPriceValue]   = useState('')
 
-  // ââ Counts ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Counts ──────────────────────────────────────────────────────────────────
   const counts: Record<string, number> = { all: contacts.length }
   contacts.forEach(c => {
     const s = normalizeStage(c.pipeline_status)
     counts[s] = (counts[s] || 0) + 1
   })
 
-  // ââ Filter âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Filter ───────────────────────────────────────────────────────────────────
   const filtered = contacts.filter(c => {
     const stage = normalizeStage(c.pipeline_status)
     if (activeStage !== 'all' && stage !== activeStage) return false
@@ -55,7 +55,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
     return true
   })
 
-  // ââ Supabase actions âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Supabase actions ─────────────────────────────────────────────────────────
   const saveNote = async (id: string, value: string) => {
     setEditingNote(null)
     await supabase.from('contacts').update({ notes: value }).eq('id', id)
@@ -74,49 +74,49 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
     onRefresh()
   }
 
-  // ââ Tabs config âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Tabs config ───────────────────────────────────────────────────────────────
   const tabs = [
     { key: 'all', label: 'Alle' },
     ...STAGE_KEYS.map(k => ({ key: k, label: STAGE_CONFIG[k].label })),
   ]
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="card overflow-hidden">
 
-      {/* ââ Search bar âââââââââââââââââââââââââââââââââââââââââââââââââââââââ */}
-      <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3">
+      {/* ── Search bar ───────────────────────────────────────────────────────── */}
+      <div className="px-5 py-3.5 border-b border-ink-100 flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">ð</span>
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Name, Firma oder Telefonâ¦"
+            placeholder="Name, Firma oder Telefon…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:bg-white transition-colors"
+            className="input-soft !py-2 !pl-9"
           />
         </div>
-        <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full">
+        <span className="ml-auto text-xs text-ink-500 font-semibold bg-surface px-3 py-1.5 rounded-full num">
           {filtered.length} Kontakte
         </span>
       </div>
 
-      {/* ââ Stage tabs ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */}
-      <div className="flex border-b border-gray-100 overflow-x-auto">
+      {/* ── Stage tabs ────────────────────────────────────────────────────────── */}
+      <div className="flex gap-1 px-3 py-2 border-b border-ink-100 overflow-x-auto">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveStage(tab.key)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap border-b-2 transition-colors ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold whitespace-nowrap rounded-full transition-colors ${
               activeStage === tab.key
-                ? 'border-indigo-600 text-indigo-600 font-semibold'
-                : 'border-transparent text-gray-500 hover:text-gray-800'
+                ? 'bg-brand-500 text-white shadow-btn'
+                : 'text-ink-500 hover:text-ink-700 hover:bg-surface'
             }`}
           >
             {tab.label}
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold num ${
               activeStage === tab.key
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'bg-gray-100 text-gray-500'
+                ? 'bg-white/20 text-white'
+                : 'bg-surface text-ink-500'
             }`}>
               {counts[tab.key] || 0}
             </span>
@@ -124,27 +124,27 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
         ))}
       </div>
 
-      {/* ââ Table / Empty state âââââââââââââââââââââââââââââââââââââââââââââââ */}
+      {/* ── Table / Empty state ─────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
-        <div className="py-20 text-center text-gray-400">
-          <p className="text-4xl mb-3">ð­</p>
+        <div className="py-20 text-center text-ink-400">
+          <Inbox size={32} className="mx-auto mb-3 opacity-40" />
           <p className="text-sm">Keine Kontakte gefunden</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-xs uppercase tracking-wide text-gray-400 font-semibold">
-                <th className="text-left px-5 py-3 w-36">Stage</th>
-                <th className="text-left px-5 py-3">Name / Firma</th>
-                <th className="text-left px-5 py-3 w-44">Telefon</th>
-                <th className="text-left px-5 py-3 w-24">Datum</th>
-                <th className="text-left px-5 py-3 min-w-[180px]">Notiz</th>
-                <th className="text-left px-5 py-3 w-28">Deal-Wert</th>
-                <th className="text-left px-5 py-3 w-52">Aktionen</th>
+              <tr className="border-b border-ink-100">
+                <th className="th w-36">Stage</th>
+                <th className="th">Name / Firma</th>
+                <th className="th w-44">Telefon</th>
+                <th className="th w-24">Datum</th>
+                <th className="th min-w-[180px]">Notiz</th>
+                <th className="th w-28">Deal-Wert</th>
+                <th className="th w-52">Aktionen</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-ink-100">
               {filtered.map(contact => {
                 const stage = normalizeStage(contact.pipeline_status)
                 const cfg   = STAGE_CONFIG[stage] ?? STAGE_CONFIG.lead
@@ -153,49 +153,49 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                 const price = contact.price ?? 0
 
                 return (
-                  <tr key={contact.id} className="hover:bg-indigo-50/30 group transition-colors">
+                  <tr key={contact.id} className="hover:bg-surface group transition-colors">
 
                     {/* Stage badge */}
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.badge}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                    <td className="td">
+                      <span className={`pill ${cfg.badge}`}>
+                        <span className={`pill-dot ${cfg.dot}`} />
                         {cfg.label}
                       </span>
                     </td>
 
                     {/* Name + Company */}
-                    <td className="px-5 py-3.5">
+                    <td className="td">
                       <button onClick={() => onSelectContact(contact)} className="text-left">
-                        <p className="font-semibold text-gray-900 hover:text-indigo-600 transition-colors leading-tight">
+                        <p className="font-semibold text-ink-900 hover:text-brand-600 transition-colors leading-tight">
                           {contact.name}
                         </p>
                         {contact.company && (
-                          <p className="text-xs text-gray-400 mt-0.5">{contact.company}</p>
+                          <p className="text-xs text-ink-400 mt-0.5">{contact.company}</p>
                         )}
                       </button>
                     </td>
 
                     {/* Phone */}
-                    <td className="px-5 py-3.5">
+                    <td className="td">
                       {contact.phone ? (
                         <a
                           href={`tel:${contact.phone}`}
                           onClick={e => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 text-gray-700 bg-gray-100 hover:bg-indigo-100 hover:text-indigo-700 px-2.5 py-1.5 rounded-lg transition-colors text-xs font-medium"
+                          className="inline-flex items-center gap-1.5 text-ink-700 bg-surface hover:bg-brand-50 hover:text-brand-600 px-2.5 py-1.5 rounded-lg transition-colors text-xs font-semibold num"
                         >
                           <Phone size={11} />
                           {contact.phone}
                         </a>
                       ) : (
-                        <span className="text-gray-300 text-xs">â</span>
+                        <span className="text-ink-300 text-xs">–</span>
                       )}
                     </td>
 
                     {/* Date */}
-                    <td className="px-5 py-3.5 text-xs text-gray-400 tabular-nums">{date}</td>
+                    <td className="td text-xs text-ink-400 num">{date}</td>
 
-                    {/* Note â inline edit */}
-                    <td className="px-5 py-3.5 max-w-[200px]">
+                    {/* Note — inline edit */}
+                    <td className="td max-w-[200px]">
                       {editingNote === contact.id ? (
                         <input
                           autoFocus
@@ -207,8 +207,8 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                             if (e.key === 'Escape') setEditingNote(null)
                           }}
                           onBlur={() => saveNote(contact.id, noteValue)}
-                          className="w-full text-xs border border-indigo-400 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                          placeholder="Notiz eingebenâ¦"
+                          className="w-full text-xs border border-brand-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                          placeholder="Notiz eingeben…"
                         />
                       ) : (
                         <button
@@ -216,11 +216,11 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                           className="text-left w-full"
                         >
                           {contact.notes ? (
-                            <span className="block text-xs text-gray-600 truncate max-w-[180px] px-1.5 py-1 rounded hover:bg-gray-100 transition-colors">
+                            <span className="block text-xs text-ink-700 truncate max-w-[180px] px-1.5 py-1 rounded-lg hover:bg-ink-100 transition-colors">
                               {contact.notes}
                             </span>
                           ) : (
-                            <span className="block text-xs text-gray-300 italic px-1.5 py-1 rounded hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100">
+                            <span className="block text-xs text-ink-300 px-1.5 py-1 rounded-lg hover:bg-ink-100 transition-colors opacity-0 group-hover:opacity-100">
                               + Notiz
                             </span>
                           )}
@@ -228,8 +228,8 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                       )}
                     </td>
 
-                    {/* Price â inline edit */}
-                    <td className="px-5 py-3.5">
+                    {/* Price — inline edit */}
+                    <td className="td">
                       {editingPrice === contact.id ? (
                         <input
                           autoFocus
@@ -241,7 +241,7 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                             if (e.key === 'Escape') setEditingPrice(null)
                           }}
                           onBlur={() => savePrice(contact.id, priceValue)}
-                          className="w-24 text-xs border border-indigo-400 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                          className="w-24 text-xs border border-brand-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                           min="0"
                           placeholder="0"
                         />
@@ -251,11 +251,11 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                           className="text-left"
                         >
                           {price > 0 ? (
-                            <span className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 px-1.5 py-1 rounded hover:bg-gray-100 transition-colors">
+                            <span className="text-xs font-bold text-emerald-600 hover:text-emerald-700 px-1.5 py-1 rounded-lg hover:bg-emerald-50 transition-colors num">
                               {price.toLocaleString('de-DE')} €
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-300 italic px-1.5 py-1 rounded hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100">
+                            <span className="text-xs text-ink-300 px-1.5 py-1 rounded-lg hover:bg-ink-100 transition-colors opacity-0 group-hover:opacity-100">
                               + Wert
                             </span>
                           )}
@@ -264,14 +264,13 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact }: P
                     </td>
 
                     {/* Actions */}
-                    <td className="px-5 py-3.5">
+                    <td className="td">
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-
                         <select
                           value={stage}
                           onChange={e => { e.stopPropagation(); changeStage(contact.id, e.target.value) }}
                           onClick={e => e.stopPropagation()}
-                          className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 cursor-pointer"
+                          className="text-xs border border-ink-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
                         >
                           {STAGE_KEYS.map(k => (
                             <option key={k} value={k}>{STAGE_CONFIG[k].label}</option>
