@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase, Contact, Deal, Activity, Profile } from './lib/supabase'
 import Dashboard from './components/Dashboard'
-import ContactTable from './components/ContactTable'
 import KanbanBoard from './components/KanbanBoard'
 import PipelineList from './components/PipelineList'
 import ActivityLog from './components/ActivityLog'
@@ -10,9 +9,9 @@ import ContactModal from './components/ContactModal'
 import ImportLeads from './components/ImportLeads'
 import Login from './components/Login'
 import SalesRepView from './components/SalesRepView'
-import { Plus, LogOut, Upload, Users, RefreshCw, LayoutGrid, Contact2, GitBranch, MessageSquare, KeyRound, List, Columns } from 'lucide-react'
+import { Plus, LogOut, Upload, Users, RefreshCw, LayoutGrid, GitBranch, MessageSquare, KeyRound, List, Columns } from 'lucide-react'
 
-type View = 'dashboard' | 'contacts' | 'pipeline' | 'activities' | 'team'
+type View = 'dashboard' | 'pipeline' | 'activities' | 'team'
 
 // ─── Passwort setzen nach Recovery-Link ──────────────────────────────────────
 function SetPasswordModal({ onDone }: { onDone: () => void }) {
@@ -283,8 +282,7 @@ export default function App() {
 
   const navItems: { id: View; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard',  label: 'Dashboard',   icon: <LayoutGrid size={15} /> },
-    { id: 'contacts',   label: 'Kontakte',    icon: <Contact2 size={15} /> },
-    { id: 'pipeline',   label: 'Pipeline',    icon: <GitBranch size={15} /> },
+    { id: 'pipeline',   label: 'Leads',       icon: <GitBranch size={15} /> },
     { id: 'activities', label: 'Aktivitäten', icon: <MessageSquare size={15} /> },
     { id: 'team',       label: 'Team',        icon: <Users size={15} /> },
   ]
@@ -319,7 +317,7 @@ export default function App() {
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <button onClick={fetchData} title="Daten neu laden" className="btn-ghost !px-2.5"><RefreshCw size={16} /></button>
               <button onClick={() => setShowImportModal(true)} className="btn-soft !px-2.5 sm:!px-4"><Upload size={15} /><span className="hidden lg:inline">Import</span></button>
-              <button onClick={() => { setSelectedContact(null); setShowContactModal(true) }} className="btn-primary !px-2.5 sm:!px-4"><Plus size={15} /><span className="hidden lg:inline">Kontakt</span></button>
+              <button onClick={() => { setSelectedContact(null); setShowContactModal(true) }} className="btn-primary !px-2.5 sm:!px-4"><Plus size={15} /><span className="hidden lg:inline">Lead</span></button>
               <button onClick={handleLogout} title="Abmelden" className="btn-ghost !px-2.5"><LogOut size={16} /></button>
             </div>
           </div>
@@ -343,8 +341,7 @@ export default function App() {
           </div>
         ) : (
           <>
-            {view === 'dashboard' && <Dashboard stats={stats} contacts={contacts} deals={deals} activities={activities} userName={profile.name} onNavigateToContacts={() => setView('contacts')} onSelectContact={handleSelectContact} onGoToPipeline={handleGoToPipeline} />}
-            {view === 'contacts' && <ContactTable contacts={contacts} onSelectContact={handleSelectContact} onRefresh={fetchContacts} salesReps={salesReps} />}
+            {view === 'dashboard' && <Dashboard stats={stats} contacts={contacts} deals={deals} activities={activities} userName={profile.name} onNavigateToContacts={() => handleGoToPipeline()} onSelectContact={handleSelectContact} onGoToPipeline={handleGoToPipeline} />}
             {view === 'pipeline' && (
               <div className="animate-fadeUp">
                 <div className="flex items-center justify-between mb-4">
@@ -364,7 +361,7 @@ export default function App() {
                   </div>
                 </div>
                 {pipelineMode === 'list'
-                  ? <PipelineList key={pipelineStage || 'all'} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} initialStage={pipelineStage} />
+                  ? <PipelineList key={pipelineStage || 'all'} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} initialStage={pipelineStage} salesReps={salesReps} />
                   : <KanbanBoard deals={deals} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} />
                 }
               </div>
