@@ -75,6 +75,9 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
             </div>
             <div>
               <h3 className="font-bold text-ink-900">{contact.name}</h3>
+              {contact.produkt?.includes('3D Modellierung') && (
+                <span className="inline-flex mt-0.5 rounded-full bg-violet-100 text-violet-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">3D Modellierung</span>
+              )}
               {contact.company && <p className="text-xs text-ink-500">{contact.company}</p>}
             </div>
           </div>

@@ -138,6 +138,9 @@ export default function KanbanBoard({ contacts, onRefresh, onSelectContact }: Pr
                           </div>
                           <p className="text-sm font-semibold text-ink-900 truncate flex-1">{contact.name}</p>
                         </div>
+                        {contact.produkt?.includes('3D Modellierung') && (
+                          <span className="inline-flex mb-1 rounded-full bg-violet-100 text-violet-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">3D Modellierung</span>
+                        )}
                         {contact.company && (
                           <p className="text-xs text-ink-400 truncate mb-1">{contact.company}</p>
                         )}

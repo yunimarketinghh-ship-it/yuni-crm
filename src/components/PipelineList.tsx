@@ -318,6 +318,9 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
                     <td className="td">
                       <p className="font-semibold text-ink-900 group-hover:text-brand-600 transition-colors leading-tight">
                         {contact.name}
+                        {contact.produkt?.includes('3D Modellierung') && (
+                          <span className="ml-2 align-middle inline-flex items-center rounded-full bg-violet-100 text-violet-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide" title="Lead für 3D Modellierung">3D Modellierung</span>
+                        )}
                       </p>
                       {(contact.company || contact.email) && (
                         <p className="text-xs text-ink-400 mt-0.5 truncate max-w-[220px]">{contact.company || contact.email}</p>
