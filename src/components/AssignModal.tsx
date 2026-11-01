@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useEscape } from '../lib/useEscape'
 import { X, UserCheck } from 'lucide-react'
 import { supabase, Profile } from '../lib/supabase'
 
@@ -9,6 +10,7 @@ type Props = {
 }
 
 export default function AssignModal({ contactIds, onClose, onDone }: Props) {
+  useEscape(onClose)
   const [salesReps, setSalesReps] = useState<Profile[]>([])
   const [selected, setSelected] = useState<string>('')
   const [saving, setSaving] = useState(false)

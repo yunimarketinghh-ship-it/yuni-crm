@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useEscape } from '../lib/useEscape'
 import { Contact, supabase } from '../lib/supabase'
 import { Upload, CheckCircle, AlertCircle, X } from 'lucide-react'
 
@@ -8,6 +9,7 @@ interface ImportLeadsProps {
 }
 
 export default function ImportLeads({ onClose, onComplete }: ImportLeadsProps) {
+  useEscape(onClose)
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)

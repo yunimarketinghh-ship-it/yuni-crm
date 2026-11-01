@@ -3,6 +3,7 @@ import { supabase, Contact, Activity, Profile } from '../lib/supabase'
 import { LogOut, Phone, Mail, Building2, MessageSquare, TrendingUp, CheckCircle, Clock, AlertCircle, Plus, X, PhoneCall } from 'lucide-react'
 import Dashboard from './Dashboard'
 import PipelineList from './PipelineList'
+import { useEscape } from '../lib/useEscape'
 
 const STATUS_LABELS: Record<string, { label: string; color: string; activeColor: string; icon: React.ReactNode }> = {
   nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-ink-100 text-ink-500', activeColor: 'bg-ink-700 text-white', icon: <Clock className="w-3 h-3" /> },
@@ -23,6 +24,7 @@ interface ContactDetailProps {
 }
 
 function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailProps) {
+  useEscape(onClose)
   const [activities, setActivities] = useState<Activity[]>([])
   const [note, setNote] = useState('')
   const [status, setStatus] = useState(contact.pipeline_status || 'lead')

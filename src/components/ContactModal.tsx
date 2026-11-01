@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase, Contact } from '../lib/supabase'
+import { useEscape } from '../lib/useEscape'
 import { X, Save, Trash2, UserMinus } from 'lucide-react'
 
 const PIPELINE_OPTIONS = [
@@ -19,6 +20,7 @@ type Props = {
 }
 
 export default function ContactModal({ contact, onClose, onSave }: Props) {
+  useEscape(onClose)
   const [form, setForm] = useState({
     name: '',
     email: '',
