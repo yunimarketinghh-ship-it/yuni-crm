@@ -325,6 +325,11 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
                       {(contact.company || contact.email) && (
                         <p className="text-xs text-ink-400 mt-0.5 truncate max-w-[220px]">{contact.company || contact.email}</p>
                       )}
+                      {(contact.verwendungszweck || contact.startzeitpunkt) && (
+                        <p className="text-[11px] text-brand-600 mt-1 truncate max-w-[260px]" title={[contact.verwendungszweck, contact.startzeitpunkt].filter(Boolean).join(' · ')}>
+                          {[contact.verwendungszweck, contact.startzeitpunkt].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
                     </td>
 
                     {/* Phone */}

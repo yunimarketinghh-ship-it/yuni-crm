@@ -79,6 +79,9 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
                 <span className="inline-flex mt-0.5 rounded-full bg-violet-100 text-violet-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">3D Modellierung</span>
               )}
               {contact.company && <p className="text-xs text-ink-500">{contact.company}</p>}
+              {(contact.verwendungszweck || contact.startzeitpunkt) && (
+                <p className="text-[11px] text-brand-600 mt-0.5">{[contact.verwendungszweck, contact.startzeitpunkt].filter(Boolean).join(' · ')}</p>
+              )}
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-surface rounded-xl transition-colors">

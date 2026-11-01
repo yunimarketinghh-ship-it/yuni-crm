@@ -110,6 +110,32 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 px-3.5 py-2.5 rounded-xl">{error}</p>}
 
+          {contact && (contact.verwendungszweck || contact.startzeitpunkt || contact.produkt) && (() => {
+            const is3d = !!contact.produkt?.includes('3D Modellierung')
+            return (
+              <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold uppercase tracking-wide text-brand-600">Antworten aus dem Lead-Formular</p>
+                  {contact.produkt && (
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${is3d ? 'bg-violet-100 text-violet-700' : 'bg-white text-ink-500 border border-ink-100'}`}>{contact.produkt}</span>
+                  )}
+                </div>
+                {contact.verwendungszweck && (
+                  <div>
+                    <p className="text-xs text-ink-400">{is3d ? 'Was soll in 3D visualisiert werden?' : 'Wofür wird das Video gebraucht?'}</p>
+                    <p className="text-sm font-semibold text-ink-900">{contact.verwendungszweck}</p>
+                  </div>
+                )}
+                {contact.startzeitpunkt && (
+                  <div>
+                    <p className="text-xs text-ink-400">{is3d ? 'Wann soll das Projekt umgesetzt werden?' : 'Wann soll es losgehen?'}</p>
+                    <p className="text-sm font-semibold text-ink-900">{contact.startzeitpunkt}</p>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="label">Name *</label>
