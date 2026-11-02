@@ -65,8 +65,15 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
   const adminTools = !!salesReps
 
   // ── Counts ──────────────────────────────────────────────────────────────────
-  const counts: Record<string, number> = { all: contacts.length }
-  contacts.forEach(c => {
+  const countBase = contacts.filter(c => {
+    if (filterMonth !== 'alle' && monthKey(c) !== filterMonth) return false
+    if (filterRep !== 'alle') {
+      if (filterRep === 'unassigned' ? !!c.assigned_to : c.assigned_to !== filterRep) return false
+    }
+    return true
+  })
+  const counts: Record<string, number> = { all: countBase.length }
+  countBase.forEach(c => {
     const s = normalizeStage(c.pipeline_status)
     counts[s] = (counts[s] || 0) + 1
   })
