@@ -20,6 +20,7 @@ interface Props {
   onNavigateToContacts?: () => void
   onSelectContact?: (contact: Contact) => void
   onGoToPipeline?: (stage?: string) => void
+  onGoToMonth?: (month: string) => void
 }
 
 const statusColors: Record<string, string> = {
@@ -64,7 +65,7 @@ function greeting(): string {
   return 'Guten Abend'
 }
 
-export default function Dashboard({ stats, contacts, deals: _deals, userName, onNavigateToContacts, onSelectContact, onGoToPipeline }: Props) {
+export default function Dashboard({ stats, contacts, deals: _deals, userName, onNavigateToContacts, onSelectContact, onGoToPipeline, onGoToMonth }: Props) {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
 
   const recentContacts = [...contacts]
@@ -198,14 +199,22 @@ export default function Dashboard({ stats, contacts, deals: _deals, userName, on
                 <span className="text-xs font-bold text-emerald-600 num ml-1">
                   {(monthDetail.contacts.reduce((s, c) => s + (c.price || 0), 0) / 1000).toFixed(1)} k€ Wert
                 </span>
-                <button onClick={() => setSelectedMonth(null)} title="Schließen" className="ml-auto p-1.5 text-ink-400 hover:text-ink-700 hover:bg-surface rounded-lg transition-colors">
+                {onGoToMonth && monthDetail.contacts.length > 0 && (
+                  <button
+                    onClick={() => onGoToMonth(`${monthDetail.y}-${String(monthDetail.m + 1).padStart(2, '0')}`)}
+                    className="ml-auto btn-soft !py-1.5 !px-3 !text-xs"
+                  >
+                    Alle {monthDetail.contacts.length} in der Lead-Liste öffnen
+                  </button>
+                )}
+                <button onClick={() => setSelectedMonth(null)} title="Schließen" className={`${onGoToMonth ? '' : 'ml-auto '}p-1.5 text-ink-400 hover:text-ink-700 hover:bg-surface rounded-lg transition-colors`}>
                   <X size={15} />
                 </button>
               </div>
               {monthDetailContacts.length === 0 ? (
                 <p className="text-sm text-ink-400 py-3">Keine Leads in diesem Monat.</p>
               ) : (
-                <div className="max-h-64 overflow-y-auto divide-y divide-ink-100 -mx-2">
+                <div className="max-h-[28rem] overflow-y-auto divide-y divide-ink-100 -mx-2">
                   {monthDetailContacts.map(contact => {
                     const status = contact.pipeline_status || 'nicht_kontaktiert'
                     const date = new Date(contact.lead_date || contact.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })

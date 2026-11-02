@@ -34,14 +34,26 @@ type Props = {
   onRefresh: () => void
   onSelectContact: (c: Contact) => void
   initialStage?: string | null
+  initialMonth?: string | null   // 'YYYY-MM'
   salesReps?: Profile[]   // wenn gesetzt (Admin): Vertriebler-Filter + Mehrfachauswahl
 }
 
-export default function PipelineList({ contacts, onRefresh, onSelectContact, initialStage, salesReps }: Props) {
+const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+const monthKey = (c: Contact) => {
+  const d = new Date(c.lead_date || c.created_at)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+const monthLabel = (k: string) => {
+  const [y, m] = k.split('-')
+  return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`
+}
+
+export default function PipelineList({ contacts, onRefresh, onSelectContact, initialStage, initialMonth, salesReps }: Props) {
   const [activeStage, setActiveStage] = useState(initialStage && STAGE_KEYS.includes(initialStage) ? initialStage : 'all')
   const [search, setSearch]           = useState('')
   const [sort, setSort]               = useState<SortKey>('date_desc')
   const [filterRep, setFilterRep]     = useState('alle')
+  const [filterMonth, setFilterMonth] = useState(initialMonth || 'alle')
   const [selected, setSelected]       = useState<Set<string>>(new Set())
   const [showAssign, setShowAssign]   = useState(false)
   const [deleting, setDeleting]       = useState(false)
@@ -59,12 +71,18 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
     counts[s] = (counts[s] || 0) + 1
   })
 
+  // ── Monate (für Monatsfilter) ─────────────────────────────────────────────────
+  const monthCounts: Record<string, number> = {}
+  contacts.forEach(c => { const k = monthKey(c); monthCounts[k] = (monthCounts[k] || 0) + 1 })
+  const monthOptions = Object.keys(monthCounts).sort().reverse()
+
   // ── Filter + Sort ─────────────────────────────────────────────────────────────
   const getDate = (c: Contact) => new Date(c.lead_date || c.created_at).getTime()
   const filtered = contacts
     .filter(c => {
       const stage = normalizeStage(c.pipeline_status)
       if (activeStage !== 'all' && stage !== activeStage) return false
+      if (filterMonth !== 'alle' && monthKey(c) !== filterMonth) return false
       if (filterRep !== 'alle') {
         if (filterRep === 'unassigned' ? !!c.assigned_to : c.assigned_to !== filterRep) return false
       }
@@ -155,6 +173,20 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
             onChange={e => setSearch(e.target.value)}
             className="input-soft !py-2 !pl-9"
           />
+        </div>
+        <div className="relative">
+          <select
+            value={filterMonth}
+            onChange={e => { setFilterMonth(e.target.value); setSelected(new Set()) }}
+            title="Nach Monat filtern"
+            className={`text-[13px] font-semibold border rounded-lg pl-2.5 pr-7 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer appearance-none ${filterMonth !== 'alle' ? 'text-brand-600 border-brand-300 bg-brand-50' : 'text-ink-700 border-ink-200 bg-white'}`}
+          >
+            <option value="alle">Alle Monate</option>
+            {monthOptions.map(k => (
+              <option key={k} value={k}>{monthLabel(k)} ({monthCounts[k]})</option>
+            ))}
+          </select>
+          <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
         </div>
         {adminTools && (
           <div className="relative">

@@ -152,6 +152,7 @@ export default function App() {
   const [view, setView] = useState<View>('dashboard')
   const [pipelineMode, setPipelineMode] = useState<'kanban' | 'list'>('list')
   const [pipelineStage, setPipelineStage] = useState<string | null>(null)
+  const [pipelineMonth, setPipelineMonth] = useState<string | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
@@ -261,8 +262,15 @@ export default function App() {
 
   const handleLogout = async () => { await supabase.auth.signOut() }
   const handleSelectContact = (contact: Contact) => { setSelectedContact(contact); setShowContactModal(true) }
+  const handleGoToMonth = (month: string) => {
+    setPipelineStage(null)
+    setPipelineMonth(month)
+    setPipelineMode('list')
+    setView('pipeline')
+  }
   const handleGoToPipeline = (stage?: string) => {
     setPipelineStage(stage || null)
+    setPipelineMonth(null)
     setPipelineMode('list')
     setView('pipeline')
   }
@@ -304,7 +312,7 @@ export default function App() {
               {navItems.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => { if (tab.id === 'pipeline') setPipelineStage(null); setView(tab.id) }}
+                  onClick={() => { if (tab.id === 'pipeline') { setPipelineStage(null); setPipelineMonth(null) } setView(tab.id) }}
                   aria-current={view === tab.id ? 'page' : undefined}
                   className={`navpill ${view === tab.id ? 'navpill-active' : ''}`}
                 >
@@ -341,7 +349,7 @@ export default function App() {
           </div>
         ) : (
           <>
-            {view === 'dashboard' && <Dashboard stats={stats} contacts={contacts} deals={deals} activities={activities} userName={profile.name} onNavigateToContacts={() => handleGoToPipeline()} onSelectContact={handleSelectContact} onGoToPipeline={handleGoToPipeline} />}
+            {view === 'dashboard' && <Dashboard stats={stats} contacts={contacts} deals={deals} activities={activities} userName={profile.name} onNavigateToContacts={() => handleGoToPipeline()} onSelectContact={handleSelectContact} onGoToPipeline={handleGoToPipeline} onGoToMonth={handleGoToMonth} />}
             {view === 'pipeline' && (
               <div className="animate-fadeUp">
                 <div className="flex items-center justify-between mb-4">
@@ -361,7 +369,7 @@ export default function App() {
                   </div>
                 </div>
                 {pipelineMode === 'list'
-                  ? <PipelineList key={pipelineStage || 'all'} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} initialStage={pipelineStage} salesReps={salesReps} />
+                  ? <PipelineList key={(pipelineStage || 'all') + '|' + (pipelineMonth || 'alle')} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} initialStage={pipelineStage} initialMonth={pipelineMonth} salesReps={salesReps} />
                   : <KanbanBoard deals={deals} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} />
                 }
               </div>
