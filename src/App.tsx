@@ -66,7 +66,7 @@ function SetPasswordModal({ onDone }: { onDone: () => void }) {
 }
 
 // ─── Admin: Vertriebler verwalten ────────────────────────────────────────────
-function TeamView() {
+function TeamView({ onOpenLeads, onPreview }: { onOpenLeads: (repId: string) => void; onPreview: (p: Profile) => void }) {
   const [members, setMembers] = useState<Profile[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
@@ -132,7 +132,10 @@ function TeamView() {
                     <p className="text-xs text-ink-500 num">{assignedCounts[m.id] || 0} Leads zugewiesen</p>
                   </div>
                 </div>
-                <span className="pill bg-brand-50 text-brand-600">Vertriebler</span>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => onOpenLeads(m.id)} className="btn-soft !py-1.5 !px-3 !text-xs">Leads ansehen</button>
+                  <button onClick={() => onPreview(m)} className="btn-primary !py-1.5 !px-3 !text-xs">So sieht {(m.name || 'er').split(' ')[0]} es</button>
+                </div>
               </div>
             ))}
           </div>
@@ -153,6 +156,8 @@ export default function App() {
   const [pipelineMode, setPipelineMode] = useState<'kanban' | 'list'>('list')
   const [pipelineStage, setPipelineStage] = useState<string | null>(null)
   const [pipelineMonth, setPipelineMonth] = useState<string | null>(null)
+  const [pipelineRep, setPipelineRep] = useState<string | null>(null)
+  const [previewRep, setPreviewRep] = useState<Profile | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
@@ -262,7 +267,15 @@ export default function App() {
 
   const handleLogout = async () => { await supabase.auth.signOut() }
   const handleSelectContact = (contact: Contact) => { setSelectedContact(contact); setShowContactModal(true) }
+  const handleGoToRep = (repId: string) => {
+    setPipelineStage(null)
+    setPipelineMonth(null)
+    setPipelineRep(repId)
+    setPipelineMode('list')
+    setView('pipeline')
+  }
   const handleGoToMonth = (month: string) => {
+    setPipelineRep(null)
     setPipelineStage(null)
     setPipelineMonth(month)
     setPipelineMode('list')
@@ -271,6 +284,7 @@ export default function App() {
   const handleGoToPipeline = (stage?: string) => {
     setPipelineStage(stage || null)
     setPipelineMonth(null)
+    setPipelineRep(null)
     setPipelineMode('list')
     setView('pipeline')
   }
@@ -279,6 +293,7 @@ export default function App() {
   if (!user || !profile) return <Login />
   if (showSetPassword) return <SetPasswordModal onDone={() => setShowSetPassword(false)} />
   if (profile.role === 'sales_rep') return <SalesRepView profile={profile} />
+  if (previewRep) return <SalesRepView profile={previewRep} previewMode onExitPreview={() => setPreviewRep(null)} />
 
   const stats = {
     totalContacts: contacts.length, totalDeals: deals.length,
@@ -312,7 +327,7 @@ export default function App() {
               {navItems.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => { if (tab.id === 'pipeline') { setPipelineStage(null); setPipelineMonth(null) } setView(tab.id) }}
+                  onClick={() => { if (tab.id === 'pipeline') { setPipelineStage(null); setPipelineMonth(null); setPipelineRep(null) } setView(tab.id) }}
                   aria-current={view === tab.id ? 'page' : undefined}
                   className={`navpill ${view === tab.id ? 'navpill-active' : ''}`}
                 >
@@ -369,13 +384,13 @@ export default function App() {
                   </div>
                 </div>
                 {pipelineMode === 'list'
-                  ? <PipelineList key={(pipelineStage || 'all') + '|' + (pipelineMonth || 'alle')} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} initialStage={pipelineStage} initialMonth={pipelineMonth} salesReps={salesReps} />
+                  ? <PipelineList key={(pipelineStage || 'all') + '|' + (pipelineMonth || 'alle') + '|' + (pipelineRep || 'alle')} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} initialStage={pipelineStage} initialMonth={pipelineMonth} initialRep={pipelineRep} salesReps={salesReps} />
                   : <KanbanBoard deals={deals} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} />
                 }
               </div>
             )}
             {view === 'activities' && <ActivityLog activities={activities} contacts={contacts} onRefresh={fetchActivities} />}
-            {view === 'team' && <TeamView />}
+            {view === 'team' && <TeamView onOpenLeads={handleGoToRep} onPreview={setPreviewRep} />}
           </>
         )}
       </main>

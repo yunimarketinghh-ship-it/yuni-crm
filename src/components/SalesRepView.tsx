@@ -193,10 +193,10 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Props = { profile: Profile }
+type Props = { profile: Profile; previewMode?: boolean; onExitPreview?: () => void }
 
 // ─── SalesRepView ────────────────────────────────────────────────────────────
-export default function SalesRepView({ profile }: Props) {
+export default function SalesRepView({ profile, previewMode, onExitPreview }: Props) {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
@@ -273,11 +273,22 @@ export default function SalesRepView({ profile }: Props) {
               )}
             </button>
           </div>
-          <button onClick={handleSignOut} title="Abmelden" className="btn-ghost !px-2.5">
-            <LogOut className="w-4 h-4" />
-          </button>
+          {previewMode ? (
+            <button onClick={onExitPreview} className="btn-primary !py-1.5 !px-3 !text-xs">
+              Zurück zur Admin-Ansicht
+            </button>
+          ) : (
+            <button onClick={handleSignOut} title="Abmelden" className="btn-ghost !px-2.5">
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </header>
+      {previewMode && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-xs font-semibold text-amber-800">
+          Vorschau: So sieht {profile.name || 'der Vertriebler'} das CRM. Änderungen hier wirken echt.
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-64">

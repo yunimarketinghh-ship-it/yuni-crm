@@ -35,6 +35,7 @@ type Props = {
   onSelectContact: (c: Contact) => void
   initialStage?: string | null
   initialMonth?: string | null   // 'YYYY-MM'
+  initialRep?: string | null
   salesReps?: Profile[]   // wenn gesetzt (Admin): Vertriebler-Filter + Mehrfachauswahl
 }
 
@@ -48,11 +49,11 @@ const monthLabel = (k: string) => {
   return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`
 }
 
-export default function PipelineList({ contacts, onRefresh, onSelectContact, initialStage, initialMonth, salesReps }: Props) {
+export default function PipelineList({ contacts, onRefresh, onSelectContact, initialStage, initialMonth, initialRep, salesReps }: Props) {
   const [activeStage, setActiveStage] = useState(initialStage && STAGE_KEYS.includes(initialStage) ? initialStage : 'all')
   const [search, setSearch]           = useState('')
   const [sort, setSort]               = useState<SortKey>('date_desc')
-  const [filterRep, setFilterRep]     = useState('alle')
+  const [filterRep, setFilterRep]     = useState(initialRep || 'alle')
   const [filterMonth, setFilterMonth] = useState(initialMonth || 'alle')
   const [selected, setSelected]       = useState<Set<string>>(new Set())
   const [showAssign, setShowAssign]   = useState(false)
