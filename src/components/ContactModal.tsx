@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { supabase, Contact } from '../lib/supabase'
+import { createPortal } from 'react-dom'
+import { supabase, Contact, Profile } from '../lib/supabase'
 import { useEscape } from '../lib/useEscape'
 import { X, Save, Trash2, UserMinus } from 'lucide-react'
 
@@ -30,6 +31,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
     price: '',
     notes: '',
     source: '',
+    assigned_to: '',
   })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -37,6 +39,12 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
   const [error, setError] = useState('')
 
   const set = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }))
+  const [salesReps, setSalesReps] = useState<Profile[]>([])
+
+  useEffect(() => {
+    supabase.from('profiles').select('*').eq('role', 'sales_rep').order('name')
+      .then(({ data }) => setSalesReps((data as Profile[]) || []))
+  }, [])
 
   useEffect(() => {
     if (contact) {
@@ -49,6 +57,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
         price: contact.price != null ? String(contact.price) : '',
         notes: contact.notes || '',
         source: contact.source || '',
+        assigned_to: contact.assigned_to || '',
       })
     }
   }, [contact])
@@ -66,6 +75,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
       price: form.price ? parseFloat(form.price) : null,
       notes: form.notes.trim() || null,
       source: form.source.trim() || null,
+      assigned_to: form.assigned_to || null,
     }
     if (contact) {
       const { error } = await supabase.from('contacts').update(payload).eq('id', contact.id)
@@ -95,7 +105,7 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
     onSave()
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-ink-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="card shadow-pop w-full max-w-lg max-h-[90vh] flex flex-col animate-fadeUp">
         {/* Header */}
@@ -166,6 +176,13 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
               <input value={form.price} onChange={e => set('price', e.target.value)} type="number" className="input num" />
             </div>
             <div className="col-span-2">
+              <label className="label">Vertriebler</label>
+              <select value={form.assigned_to} onChange={e => set('assigned_to', e.target.value)} className="input cursor-pointer">
+                <option value="">Nicht zugewiesen (bei dir)</option>
+                {salesReps.map(r => <option key={r.id} value={r.id}>{r.name || 'Vertriebler'}</option>)}
+              </select>
+            </div>
+            <div className="col-span-2">
               <label className="label">Quelle</label>
               <input value={form.source} onChange={e => set('source', e.target.value)} className="input" />
             </div>
@@ -200,5 +217,5 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
         </div>
       </div>
     </div>
-  )
+  , document.body)
 }

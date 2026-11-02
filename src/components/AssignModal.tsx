@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useEscape } from '../lib/useEscape'
 import { X, UserCheck } from 'lucide-react'
 import { supabase, Profile } from '../lib/supabase'
@@ -38,7 +39,7 @@ export default function AssignModal({ contactIds, onClose, onDone }: Props) {
     onClose()
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-ink-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="card shadow-pop w-full max-w-md animate-fadeUp">
         <div className="flex items-center justify-between p-6 border-b border-ink-100">
@@ -93,5 +94,5 @@ export default function AssignModal({ contactIds, onClose, onDone }: Props) {
         </div>
       </div>
     </div>
-  )
+  , document.body)
 }
