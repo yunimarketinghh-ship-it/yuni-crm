@@ -229,7 +229,6 @@ export default function SalesRepView({ profile, previewMode, onExitPreview }: Pr
   const [listStage, setListStage] = useState<string | null>(null)
 
   const fetchContacts = useCallback(async () => {
-    setLoading(true)
     const { data } = await supabase
       .from('contacts')
       .select('*')

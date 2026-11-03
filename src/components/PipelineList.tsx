@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Contact, Profile, supabase } from '../lib/supabase'
 import AssignModal from './AssignModal'
 import { Phone, Search, Inbox, ArrowUpDown, ChevronDown, UserPlus, Trash2, X } from 'lucide-react'
@@ -39,6 +39,16 @@ type Props = {
   salesReps?: Profile[]   // wenn gesetzt (Admin): Vertriebler-Filter + Mehrfachauswahl
 }
 
+
+type StoredFilters = { stage?: string; search?: string; sort?: string; rep?: string; month?: string }
+const FILTER_KEY = 'yuni-crm-lead-filters'
+function loadFilters(): StoredFilters {
+  try { return JSON.parse(localStorage.getItem(FILTER_KEY) || '{}') } catch { return {} }
+}
+function saveFilters(f: StoredFilters) {
+  try { localStorage.setItem(FILTER_KEY, JSON.stringify(f)) } catch { /* ignore */ }
+}
+
 const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 const monthKey = (c: Contact) => {
   const d = new Date(c.lead_date || c.created_at)
@@ -50,11 +60,19 @@ const monthLabel = (k: string) => {
 }
 
 export default function PipelineList({ contacts, onRefresh, onSelectContact, initialStage, initialMonth, initialRep, salesReps }: Props) {
-  const [activeStage, setActiveStage] = useState(initialStage && STAGE_KEYS.includes(initialStage) ? initialStage : 'all')
-  const [search, setSearch]           = useState('')
-  const [sort, setSort]               = useState<SortKey>('date_desc')
-  const [filterRep, setFilterRep]     = useState(initialRep || 'alle')
-  const [filterMonth, setFilterMonth] = useState(initialMonth || 'alle')
+  // Filter bleiben erhalten (auch nach Speichern, Tab-Wechsel oder Neuladen); Sprünge aus Dashboard/Team überschreiben sie gezielt
+  const stored = loadFilters()
+  const fromNav = !!(initialStage || initialMonth || initialRep)
+  const [activeStage, setActiveStage] = useState(
+    initialStage && STAGE_KEYS.includes(initialStage) ? initialStage : fromNav ? 'all' : (stored.stage && STAGE_KEYS.concat('all').includes(stored.stage) ? stored.stage : 'all'))
+  const [search, setSearch]           = useState(fromNav ? '' : (stored.search || ''))
+  const [sort, setSort]               = useState<SortKey>((stored.sort as SortKey) || 'date_desc')
+  const [filterRep, setFilterRep]     = useState(initialRep || (fromNav ? 'alle' : (salesReps ? stored.rep || 'alle' : 'alle')))
+  const [filterMonth, setFilterMonth] = useState(initialMonth || (fromNav ? 'alle' : (stored.month || 'alle')))
+
+  useEffect(() => {
+    saveFilters({ stage: activeStage, search, sort, rep: filterRep, month: filterMonth })
+  }, [activeStage, search, sort, filterRep, filterMonth])
   const [selected, setSelected]       = useState<Set<string>>(new Set())
   const [showAssign, setShowAssign]   = useState(false)
   const [deleting, setDeleting]       = useState(false)

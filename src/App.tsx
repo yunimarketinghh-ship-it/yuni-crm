@@ -256,7 +256,7 @@ export default function App() {
   }, [])
 
   const fetchData = useCallback(async () => {
-    setDataLoading(true)
+    // Spinner nur beim ersten Laden – sonst wird die Liste neu aufgebaut und Filter/Sortierung gehen verloren
     await Promise.all([fetchContacts(), fetchDeals(), fetchActivities(), fetchSalesReps()])
     setDataLoading(false)
   }, [fetchContacts, fetchDeals, fetchActivities, fetchSalesReps])
