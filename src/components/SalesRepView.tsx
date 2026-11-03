@@ -30,6 +30,17 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
   const [status, setStatus] = useState(contact.pipeline_status || 'lead')
   const [saving, setSaving] = useState(false)
   const noteRef = useRef<HTMLTextAreaElement>(null)
+  const [myEmail, setMyEmail] = useState<string>('')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setMyEmail(data.user?.email || ''))
+  }, [])
+
+  // E-Mail immer im Gmail-Konto der Firma öffnen (z. B. m.harms@yuni-gmbh.de), nicht im privaten Mailprogramm
+  const companyMail = myEmail.endsWith('@yuni-gmbh.de') ? myEmail : ''
+  const mailHref = (to: string) => companyMail
+    ? `https://mail.google.com/mail/?authuser=${encodeURIComponent(companyMail)}&view=cm&fs=1&to=${encodeURIComponent(to)}`
+    : `mailto:${to}`
 
   const fetchActivities = useCallback(async () => {
     const { data } = await supabase
@@ -101,7 +112,7 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
               </a>
             )}
             {contact.email && (
-              <a href={`mailto:${contact.email}`} className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-50 hover:bg-brand-100 text-brand-600 rounded-xl font-semibold text-sm transition-colors">
+              <a href={mailHref(contact.email)} target={companyMail ? '_blank' : undefined} rel="noreferrer" className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-50 hover:bg-brand-100 text-brand-600 rounded-xl font-semibold text-sm transition-colors">
                 <Mail className="w-4 h-4" />
                 E-Mail
               </a>
