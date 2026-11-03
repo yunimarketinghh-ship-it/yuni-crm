@@ -58,12 +58,24 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
   const saveNote = async () => {
     if (!note.trim()) return
     setSaving(true)
-    await supabase.from('activities').insert({
+    const text = note.trim()
+    const { error } = await supabase.from('activities').insert({
+      id: crypto.randomUUID(),
       contact_id: contact.id,
       type: 'note',
-      description: note.trim(),
-      created_by: userId,
+      text,
+      user_id: userId,
     })
+    if (error) {
+      setSaving(false)
+      alert('Notiz konnte nicht gespeichert werden: ' + error.message)
+      return
+    }
+    // Notiz zusätzlich am Lead speichern, damit sie in der Telefonliste (Spalte Notiz) sichtbar ist
+    const stamp = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const merged = `[${stamp}] ${text}` + (contact.notes ? `\n${contact.notes}` : '')
+    await supabase.from('contacts').update({ notes: merged }).eq('id', contact.id)
+    onUpdated()
     setNote('')
     await fetchActivities()
     setSaving(false)
@@ -72,7 +84,8 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
 
   const updateStatus = async (newStatus: string) => {
     setStatus(newStatus)
-    await supabase.from('contacts').update({ pipeline_status: newStatus }).eq('id', contact.id)
+    const { error } = await supabase.from('contacts').update({ pipeline_status: newStatus }).eq('id', contact.id)
+    if (error) { alert('Status konnte nicht gespeichert werden: ' + error.message); return }
     onUpdated()
     onClose()
   }
@@ -188,7 +201,7 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
               <div className="space-y-2">
                 {activities.map(act => (
                   <div key={act.id} className="p-3.5 bg-surface rounded-xl border-l-2 border-brand-300">
-                    <p className="text-sm text-ink-700">{act.description}</p>
+                    <p className="text-sm text-ink-700">{act.text || act.description}</p>
                     <p className="text-xs text-ink-400 mt-1 num">
                       {new Date(act.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </p>
