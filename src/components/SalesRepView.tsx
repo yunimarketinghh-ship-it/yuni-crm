@@ -55,38 +55,43 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
     fetchActivities()
   }, [fetchActivities])
 
-  const saveNote = async () => {
-    if (!note.trim()) return
+  const originalStatus = contact.pipeline_status || 'lead'
+  const statusChanged = status !== originalStatus
+  const hasChanges = statusChanged || note.trim().length > 0
+
+  // Ein gemeinsamer Speichern-Button: Status (falls geändert) + Notiz (falls vorhanden)
+  const handleSave = async () => {
+    if (!hasChanges || saving) return
     setSaving(true)
     const text = note.trim()
-    const { error } = await supabase.from('activities').insert({
-      id: crypto.randomUUID(),
-      contact_id: contact.id,
-      type: 'note',
-      text,
-      user_id: userId,
-    })
+    const update: { pipeline_status?: string; notes?: string } = {}
+    if (statusChanged) update.pipeline_status = status
+    if (text) {
+      const { error } = await supabase.from('activities').insert({
+        id: crypto.randomUUID(),
+        contact_id: contact.id,
+        type: 'note',
+        text: statusChanged ? `${text} (Status: ${STATUS_LABELS[status]?.label || status})` : text,
+        user_id: userId,
+      })
+      if (error) {
+        setSaving(false)
+        alert('Notiz konnte nicht gespeichert werden: ' + error.message)
+        return
+      }
+      // Notiz zusätzlich am Lead speichern, damit sie in der Telefonliste (Spalte Notiz) sichtbar ist
+      const stamp = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      update.notes = `[${stamp}] ${text}` + (contact.notes ? `\n${contact.notes}` : '')
+    }
+    const { error } = await supabase.from('contacts').update(update).eq('id', contact.id)
     if (error) {
       setSaving(false)
-      alert('Notiz konnte nicht gespeichert werden: ' + error.message)
+      alert('Speichern fehlgeschlagen: ' + error.message)
       return
     }
-    // Notiz zusätzlich am Lead speichern, damit sie in der Telefonliste (Spalte Notiz) sichtbar ist
-    const stamp = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    const merged = `[${stamp}] ${text}` + (contact.notes ? `\n${contact.notes}` : '')
-    await supabase.from('contacts').update({ notes: merged }).eq('id', contact.id)
     onUpdated()
     setNote('')
-    await fetchActivities()
     setSaving(false)
-    onClose()
-  }
-
-  const updateStatus = async (newStatus: string) => {
-    setStatus(newStatus)
-    const { error } = await supabase.from('contacts').update({ pipeline_status: newStatus }).eq('id', contact.id)
-    if (error) { alert('Status konnte nicht gespeichert werden: ' + error.message); return }
-    onUpdated()
     onClose()
   }
 
@@ -161,7 +166,7 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
               {Object.entries(STATUS_LABELS).map(([key, val]) => (
                 <button
                   key={key}
-                  onClick={() => updateStatus(key)}
+                  onClick={() => setStatus(key)}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                     status === key ? val.activeColor + ' shadow-btn' : 'bg-surface text-ink-500 hover:bg-ink-100'
                   }`}
@@ -180,17 +185,22 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
               ref={noteRef}
               value={note}
               onChange={e => setNote(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && e.ctrlKey && saveNote()}
-              placeholder={"Was wurde besprochen? Rückruf wann? Interesse woran?\n(Strg+Enter zum Speichern)"}
+              onKeyDown={e => e.key === 'Enter' && (e.ctrlKey || e.metaKey) && handleSave()}
+              placeholder={"Was wurde besprochen? Rückruf wann? Interesse woran?\n(Strg/Cmd+Enter zum Speichern)"}
               rows={3}
               className="input-soft resize-none"
             />
+            {statusChanged && (
+              <p className="text-xs text-amber-600 mt-2">
+                Status geändert auf „{STATUS_LABELS[status]?.label || status}" – noch nicht gespeichert
+              </p>
+            )}
             <button
-              onClick={saveNote}
-              disabled={saving || !note.trim()}
+              onClick={handleSave}
+              disabled={saving || !hasChanges}
               className="btn-primary w-full mt-2.5"
             >
-              {saving ? 'Wird gespeichert…' : 'Notiz speichern'}
+              {saving ? 'Wird gespeichert…' : 'Speichern'}
             </button>
           </div>
 
