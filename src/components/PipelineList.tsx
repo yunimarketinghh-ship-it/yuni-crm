@@ -65,14 +65,14 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
   const fromNav = !!(initialStage || initialMonth || initialRep)
   const [activeStage, setActiveStage] = useState(
     initialStage && STAGE_KEYS.includes(initialStage) ? initialStage : fromNav ? 'all' : (stored.stage && STAGE_KEYS.concat('all').includes(stored.stage) ? stored.stage : 'all'))
-  const [search, setSearch]           = useState(fromNav ? '' : (stored.search || ''))
+  const [search, setSearch]           = useState('') // Suche wird bewusst nicht gemerkt – sonst sieht man später nur noch einen Teil der Leads
   const [sort, setSort]               = useState<SortKey>((stored.sort as SortKey) || 'date_desc')
   const [filterRep, setFilterRep]     = useState(initialRep || (fromNav ? 'alle' : (salesReps ? stored.rep || 'alle' : 'alle')))
   const [filterMonth, setFilterMonth] = useState(initialMonth || (fromNav ? 'alle' : (stored.month || 'alle')))
 
   useEffect(() => {
-    saveFilters({ stage: activeStage, search, sort, rep: filterRep, month: filterMonth })
-  }, [activeStage, search, sort, filterRep, filterMonth])
+    saveFilters({ stage: activeStage, sort, rep: filterRep, month: filterMonth })
+  }, [activeStage, sort, filterRep, filterMonth])
   const [selected, setSelected]       = useState<Set<string>>(new Set())
   const [showAssign, setShowAssign]   = useState(false)
   const [deleting, setDeleting]       = useState(false)
