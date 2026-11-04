@@ -82,6 +82,14 @@ Deno.serve(async (req) => {
         id: v.id, number: v.voucherNumber, contact: v.contactName, date: v.voucherDate, total: v.totalAmount, status: v.voucherStatus,
       })) })
     }
+    if (action === 'selftest') {
+      if (!isAdmin) return json({ error: 'Nur Admin' }, 403)
+      const out: Record<string, number> = {}
+      for (const p of ['/v1/profile', '/v1/contacts?email=test@example.com', '/v1/articles?size=1', '/v1/voucherlist?voucherType=quotation&voucherStatus=open&size=1']) {
+        const r = await lex(p); out[p] = r.status; await r.text(); await sleep(600)
+      }
+      return json(out)
+    }
     if (action === 'preview_lexware_quote') {
       if (!isAdmin) return json({ error: 'Nur Admin' }, 403)
       const q = await lexJson(`/v1/quotations/${body.id}`)
