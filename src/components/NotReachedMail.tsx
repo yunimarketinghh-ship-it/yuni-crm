@@ -35,6 +35,7 @@ export function notReachedHtml(name: string, sig: Signature, topic: { subject: s
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background-color:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #E2E4FD;">
 <tr><td style="background-color:#171B33;background-image:linear-gradient(135deg,#2C2D71 0%,#171B33 70%);padding:26px 32px 28px 32px;">
 <span style="${font}font-size:22px;font-weight:800;letter-spacing:3px;color:#ffffff;">YUNI</span>
+<span style="${font}font-size:12px;color:#A7ABF6;letter-spacing:1px;padding-left:10px;white-space:nowrap;">ERKLÄRVIDEOS</span>
 <p style="${font}margin:18px 0 0 0;font-size:21px;line-height:1.3;font-weight:700;color:#ffffff;">${esc(topic.subject)}</p>
 </td></tr>
 <tr><td style="padding:34px 32px 8px 32px;${font}">
