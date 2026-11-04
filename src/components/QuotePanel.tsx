@@ -159,7 +159,7 @@ export default function QuotePanel({ contact, onChanged }: Props) {
             <input value={form.zip} onChange={e => set('zip', e.target.value)} placeholder="PLZ" className="input" />
             <input value={form.city} onChange={e => set('city', e.target.value)} placeholder="Ort" className="input" />
           </div>
-          <p className="text-[11px] text-ink-400">Ist der Kunde in Lexware schon angelegt (gleiche E-Mail), wird der bestehende Kontakt verwendet.</p>
+          <p className="text-[11px] text-ink-400">Ist der Kunde in Lexware schon angelegt (gleiche E-Mail), wird der bestehende Kontakt verwendet.{!form.street.trim() && <span className="text-amber-600"> Ohne Adresse steht auf dem Angebot nur der Name – Adresse am besten im Gespräch erfragen.</span>}</p>
 
           {confirming && (() => { const tpl = templates.find(t => t.id === templateId); return (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">

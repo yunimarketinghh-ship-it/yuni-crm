@@ -168,7 +168,25 @@ Deno.serve(async (req) => {
       }
 
       // 2) Vorlage laden (CRM-Vorlage oder Lexware-Angebot) und Angebot anlegen (abgeschlossen = mit Angebotsnummer)
-      const q = await buildQuote(tpl, { contactId: lexContactId })
+      // Lexware verlangt beim Verweis auf einen Kontakt genau EINE Rechnungsadresse
+      let quoteAddress: Record<string, unknown> = { contactId: lexContactId }
+      const lc = await lexJson(`/v1/contacts/${lexContactId}`)
+      const billing = lc.addresses?.billing || []
+      const hasAddr = !!(addr.street || addr.zip || addr.city)
+      const displayName = lc.company?.name || [lc.person?.firstName, lc.person?.lastName].filter(Boolean).join(' ') || companyName || personName
+      if (billing.length === 0 && hasAddr) {
+        // Adresse am Lexware-Kontakt nachtragen
+        const updated = { ...lc, addresses: { ...(lc.addresses || {}), billing: [{ ...addr, countryCode: 'DE' }] } }
+        await lexJson(`/v1/contacts/${lexContactId}`, { method: 'PUT', body: JSON.stringify(updated) })
+      } else if (billing.length === 0) {
+        // Keine Adresse bekannt: Angebot nur mit Namen (nicht mit dem Kontakt verknüpft)
+        quoteAddress = { name: displayName, countryCode: 'DE' }
+        if (companyName && personName) quoteAddress.supplement = personName
+      } else if (billing.length > 1) {
+        const b = billing[0]
+        quoteAddress = { name: displayName, street: b.street, zip: b.zip, city: b.city, countryCode: b.countryCode || 'DE' }
+      }
+      const q = await buildQuote(tpl, quoteAddress)
       const createdQ = await lexJson('/v1/quotations?finalize=true', { method: 'POST', body: JSON.stringify(q) })
       const quotationId = createdQ.id
       const full = await lexJson(`/v1/quotations/${quotationId}`)
