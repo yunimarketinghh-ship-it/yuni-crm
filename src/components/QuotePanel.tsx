@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase, Contact } from '../lib/supabase'
 import { FileText, Download, Send, Plus, Loader2 } from 'lucide-react'
 
-export type QuoteTemplate = { id: string; name: string; net_amount: number | null; active: boolean; sort: number; lexware_quotation_id: string }
+export type QuoteTemplate = { id: string; name: string; net_amount: number | null; active: boolean; sort: number; lexware_quotation_id: string | null; category?: string | null }
 type Quote = { id: string; voucher_number: string | null; net_amount: number | null; gross_amount: number | null; pdf_path: string | null; created_at: string; template_id: string | null }
 
 export async function callQuote<T = any>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
@@ -138,15 +138,16 @@ export default function QuotePanel({ contact, onChanged }: Props) {
           {templates.length === 0 ? (
             <p className="text-sm text-ink-500">Es sind noch keine Angebotsvorlagen freigegeben. Der Admin legt sie unter „Team“ an.</p>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
               <p className="text-xs font-semibold text-ink-500">Leistung</p>
-              {templates.map(t => (
-                <button key={t.id} onClick={() => { setTemplateId(t.id); setConfirming(false) }}
+              {templates.map((t, i) => (<div key={t.id}>
+                {t.category && t.category !== templates[i - 1]?.category && <p className="text-[11px] font-bold uppercase tracking-wide text-brand-600 pt-2 pb-0.5">{t.category}</p>}
+                <button onClick={() => { setTemplateId(t.id); setConfirming(false) }}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-left transition-all ${templateId === t.id ? 'bg-brand-500 text-white shadow-btn' : 'bg-white text-ink-700 hover:bg-ink-50'}`}>
                   <span className="font-semibold">{t.name}</span>
                   <span className="num">{eur(t.net_amount)} netto</span>
                 </button>
-              ))}
+              </div>))}
             </div>
           )}
 

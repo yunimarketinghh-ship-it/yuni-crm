@@ -56,6 +56,23 @@ function splitName(full: string) {
   return { firstName: parts.slice(0, -1).join(' '), lastName: parts[parts.length - 1] }
 }
 
+async function buildQuote(tpl: any, address: Record<string, unknown>) {
+  const t = tpl.payload ?? await lexJson(`/v1/quotations/${tpl.lexware_quotation_id}`)
+  const now = new Date()
+  const exp = new Date(now.getTime() + 14 * 86400000)
+  const q: any = {
+    voucherDate: now.toISOString(),
+    expirationDate: exp.toISOString(),
+    address,
+    lineItems: (t.lineItems || []).map(cleanItem),
+    totalPrice: { currency: 'EUR' },
+    taxConditions: t.taxConditions ? { taxType: t.taxConditions.taxType } : { taxType: 'net' },
+  }
+  for (const k of ['title', 'introduction', 'remark']) if (t[k]) q[k] = t[k]
+  if (t.paymentConditions) q.paymentConditions = t.paymentConditions
+  return q
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try {
@@ -90,6 +107,16 @@ Deno.serve(async (req) => {
       }
       return json(out)
     }
+    if (action === 'dryrun_template') {
+      // Legt nur einen ENTWURF ohne Angebotsnummer an, um eine Vorlage zu prüfen
+      if (!isAdmin) return json({ error: 'Nur Admin' }, 403)
+      const { data: tpl } = await admin.from('quote_templates').select('*').eq('id', body.template_id).single()
+      if (!tpl) return json({ error: 'Vorlage nicht gefunden' }, 404)
+      const q = await buildQuote(tpl, { name: 'VORLAGEN-TEST CRM (bitte löschen)', countryCode: 'DE' })
+      const created = await lexJson('/v1/quotations', { method: 'POST', body: JSON.stringify(q) })
+      const full = await lexJson(`/v1/quotations/${created.id}`)
+      return json({ id: created.id, net: full.totalPrice?.totalNetAmount, status: full.voucherStatus })
+    }
     if (action === 'preview_lexware_quote') {
       if (!isAdmin) return json({ error: 'Nur Admin' }, 403)
       const q = await lexJson(`/v1/quotations/${body.id}`)
@@ -97,6 +124,7 @@ Deno.serve(async (req) => {
         title: q.title, introduction: q.introduction, remark: q.remark,
         items: (q.lineItems || []).map((i: any) => ({ type: i.type, name: i.name, quantity: i.quantity, net: i.unitPrice?.netAmount })),
         totalNet: q.totalPrice?.totalNetAmount, totalGross: q.totalPrice?.totalGrossAmount,
+        raw: { lineItems: q.lineItems, paymentConditions: q.paymentConditions, taxConditions: q.taxConditions },
       })
     }
 
@@ -139,20 +167,8 @@ Deno.serve(async (req) => {
         lexContactId = created.id
       }
 
-      // 2) Vorlage laden und Angebot anlegen (direkt abgeschlossen = mit Angebotsnummer)
-      const t = await lexJson(`/v1/quotations/${tpl.lexware_quotation_id}`)
-      const now = new Date()
-      const exp = new Date(now.getTime() + 14 * 86400000)
-      const q: any = {
-        voucherDate: now.toISOString(),
-        expirationDate: exp.toISOString(),
-        address: { contactId: lexContactId },
-        lineItems: (t.lineItems || []).map(cleanItem),
-        totalPrice: { currency: 'EUR' },
-        taxConditions: t.taxConditions ? { taxType: t.taxConditions.taxType } : { taxType: 'net' },
-      }
-      for (const k of ['title', 'introduction', 'remark']) if (t[k]) q[k] = t[k]
-      if (t.paymentConditions) q.paymentConditions = t.paymentConditions
+      // 2) Vorlage laden (CRM-Vorlage oder Lexware-Angebot) und Angebot anlegen (abgeschlossen = mit Angebotsnummer)
+      const q = await buildQuote(tpl, { contactId: lexContactId })
       const createdQ = await lexJson('/v1/quotations?finalize=true', { method: 'POST', body: JSON.stringify(q) })
       const quotationId = createdQ.id
       const full = await lexJson(`/v1/quotations/${quotationId}`)
