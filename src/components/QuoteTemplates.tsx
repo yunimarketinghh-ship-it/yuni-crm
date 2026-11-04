@@ -19,6 +19,8 @@ export default function QuoteTemplates() {
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [listFailed, setListFailed] = useState(false)
+  const [link, setLink] = useState('')
 
   const load = async () => {
     const { data } = await supabase.from('quote_templates').select('*').order('sort').order('name')
@@ -31,8 +33,8 @@ export default function QuoteTemplates() {
 
   const startAdd = async () => {
     setAdding(true); setErr(''); setBusy(true)
-    try { setLexQuotes((await callQuote<{ items: LexQuote[] }>('list_lexware_quotes')).items) }
-    catch (e) { setErr((e as Error).message) }
+    try { setLexQuotes((await callQuote<{ items: LexQuote[] }>('list_lexware_quotes')).items); setListFailed(false) }
+    catch { setListFailed(true) } // Schlüssel ohne Belegliste-Recht -> Link einfügen
     finally { setBusy(false) }
   }
 
@@ -92,6 +94,16 @@ export default function QuoteTemplates() {
       ) : (
         <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4 space-y-3">
           {busy && <p className="text-sm text-ink-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Lädt aus Lexware…</p>}
+          {!pick && listFailed && (
+            <div className="space-y-2">
+              <p className="text-xs text-ink-500">Öffne in Lexware das Angebot, das als Vorlage dienen soll, kopiere die Adresse aus der Browserzeile und füge sie hier ein:</p>
+              <input value={link} onChange={e => setLink(e.target.value)} placeholder="https://app.lexware.de/vouchers#!/…/Quotation/…" className="input" />
+              <button className="btn-primary" disabled={!/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(link)}
+                onClick={() => { const id = link.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)![0]; choose({ id, number: 'Lexware-Angebot', contact: '', date: '', total: 0, status: '' }) }}>
+                Angebot laden
+              </button>
+            </div>
+          )}
           {!pick && lexQuotes.length > 0 && (
             <div className="max-h-72 overflow-y-auto space-y-1">
               <p className="text-xs font-semibold text-ink-500 mb-1">Welches Angebot soll als Vorlage dienen?</p>
@@ -106,7 +118,7 @@ export default function QuoteTemplates() {
           {pick && preview && (
             <div className="space-y-3">
               <div className="bg-white rounded-xl p-3 text-sm space-y-1">
-                <p className="text-xs text-ink-400">Vorlage aus {pick.number} ({pick.contact})</p>
+                <p className="text-xs text-ink-400">Vorlage aus {pick.number}{pick.contact ? ` (${pick.contact})` : ''}</p>
                 {preview.introduction && <p className="text-ink-500 italic text-xs whitespace-pre-line">{preview.introduction}</p>}
                 {preview.items.map((i, idx) => (
                   <p key={idx} className="flex justify-between gap-3"><span className="whitespace-pre-line">{i.name}</span><span className="num">{i.net != null ? `${i.quantity ?? 1} × ${eur(i.net)}` : ''}</span></p>
@@ -121,7 +133,7 @@ export default function QuoteTemplates() {
               </div>
             </div>
           )}
-          {!pick && <button onClick={() => setAdding(false)} className="text-sm text-ink-500 underline">Abbrechen</button>}
+          {!pick && <button onClick={() => { setAdding(false); setLink('') }} className="text-sm text-ink-500 underline">Abbrechen</button>}
         </div>
       )}
     </div>
