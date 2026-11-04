@@ -3,7 +3,7 @@ import { supabase, Contact } from '../lib/supabase'
 import { FileText, Download, Send, Plus, Loader2 } from 'lucide-react'
 
 export type QuoteTemplate = { id: string; name: string; net_amount: number | null; active: boolean; sort: number; lexware_quotation_id: string | null; category?: string | null }
-type Quote = { id: string; voucher_number: string | null; net_amount: number | null; gross_amount: number | null; pdf_path: string | null; created_at: string; template_id: string | null }
+type Quote = { id: string; status?: string | null; voucher_number: string | null; net_amount: number | null; gross_amount: number | null; pdf_path: string | null; created_at: string; template_id: string | null }
 
 export async function callQuote<T = any>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
   const { data, error } = await supabase.functions.invoke('lexware-quote', { body: { action, ...payload } })
@@ -46,6 +46,15 @@ export default function QuotePanel({ contact, onChanged }: Props) {
   }, [contact.id])
 
   useEffect(() => { load() }, [load])
+  // Mit Lexware abgleichen: dort gelöschte Angebote verschwinden, Status (angenommen/abgelehnt) wird übernommen
+  useEffect(() => {
+    let alive = true
+    supabase.from('quotes').select('id', { count: 'exact', head: true }).eq('contact_id', contact.id).then(({ count }) => {
+      if (!count) return
+      callQuote<{ removed: number }>('sync', { contact_id: contact.id }).then(() => { if (alive) load() }).catch(() => { /* still show local list */ })
+    })
+    return () => { alive = false }
+  }, [contact.id, load])
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       setMyEmail(data.user?.email || '')
@@ -112,7 +121,13 @@ export default function QuotePanel({ contact, onChanged }: Props) {
             <div key={q.id} className="flex items-center gap-3 p-3 bg-surface rounded-xl">
               <FileText className="w-4 h-4 text-brand-500 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-ink-900">{q.voucher_number || 'Angebot'}</p>
+                <p className="text-sm font-semibold text-ink-900 flex items-center gap-2">{q.voucher_number || 'Angebot'}
+                  {q.status && q.status !== 'open' && (
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${q.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : q.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-ink-100 text-ink-500'}`}>
+                      {({ accepted: 'angenommen', rejected: 'abgelehnt', draft: 'Entwurf', voided: 'storniert' } as Record<string, string>)[q.status] || q.status}
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-ink-400 num">{eur(q.net_amount)} netto · {new Date(q.created_at).toLocaleDateString('de-DE')}</p>
               </div>
               {q.pdf_path && (

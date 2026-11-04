@@ -220,7 +220,7 @@ Deno.serve(async (req) => {
       // 4) CRM aktualisieren
       const { data: row } = await admin.from('quotes').insert({
         contact_id, template_id: tpl.id, lexware_id: quotationId, voucher_number: number,
-        net_amount: net, gross_amount: gross, pdf_path: pdfPath, created_by: user.id,
+        net_amount: net, gross_amount: gross, pdf_path: pdfPath, created_by: user.id, status: full.voucherStatus || 'open',
       }).select().single()
       const upd: any = { lexware_contact_id: lexContactId, price: net }
       if (['lead', 'nicht_kontaktiert', 'nicht_erreicht', 'in_kontakt', 'verloren'].includes(contact.pipeline_status)) upd.pipeline_status = 'angebot'
@@ -233,6 +233,30 @@ Deno.serve(async (req) => {
     }
 
     // ---------- PDF-Link ----------
+    // ---------- Abgleich: in Lexware gelöschte Angebote entfernen, Status übernehmen ----------
+    if (action === 'sync') {
+      const { contact_id } = body
+      const { data: contact } = await admin.from('contacts').select('id,assigned_to').eq('id', contact_id).single()
+      if (!contact) return json({ error: 'Lead nicht gefunden' }, 404)
+      if (!isAdmin && contact.assigned_to !== user.id) return json({ error: 'Kein Zugriff' }, 403)
+      const { data: rows } = await admin.from('quotes').select('*').eq('contact_id', contact_id)
+      let removed = 0
+      for (const row of rows || []) {
+        const r = await lex(`/v1/quotations/${row.lexware_id}`)
+        if (r.status === 404) {
+          await r.text()
+          if (row.pdf_path) await admin.storage.from('quotes').remove([row.pdf_path])
+          await admin.from('quotes').delete().eq('id', row.id)
+          removed++
+        } else if (r.ok) {
+          const q = await r.json()
+          if (q.voucherStatus && q.voucherStatus !== row.status) await admin.from('quotes').update({ status: q.voucherStatus }).eq('id', row.id)
+        } else { await r.text() }
+        await sleep(450)
+      }
+      return json({ ok: true, removed })
+    }
+
     if (action === 'pdf') {
       const { data: row } = await userClient.from('quotes').select('*').eq('id', body.quote_id).single() // RLS prüft Zugriff
       if (!row?.pdf_path) return json({ error: 'Kein PDF vorhanden' }, 404)
