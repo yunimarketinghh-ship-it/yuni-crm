@@ -21,7 +21,7 @@ export function notReachedHtml(name: string, sig: Signature, topic: { subject: s
   const greeting = name.trim() ? `Guten Tag ${esc(name.trim())},` : 'Guten Tag,'
   const font = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"
   const btn = (href: string, label: string, primary: boolean) =>
-    `<a href="${href}" target="_blank" style="${font}display:inline-block;padding:14px 26px;border-radius:12px;font-size:15px;font-weight:600;text-decoration:none;${primary
+    `<a href="${href}" target="_blank" style="${font}display:inline-block;white-space:nowrap;padding:14px 26px;border-radius:12px;font-size:15px;font-weight:600;text-decoration:none;${primary
       ? 'background-color:#5A5CE6;color:#ffffff;border:1px solid #5A5CE6;'
       : 'background-color:#ffffff;color:#3D3CB2;border:1px solid #C9CCFB;'}">${label}</a>`
   const tel = sig.phone.replace(/[^+0-9]/g, '')
@@ -35,7 +35,6 @@ export function notReachedHtml(name: string, sig: Signature, topic: { subject: s
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background-color:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #E2E4FD;">
 <tr><td style="background-color:#171B33;background-image:linear-gradient(135deg,#2C2D71 0%,#171B33 70%);padding:26px 32px 28px 32px;">
 <span style="${font}font-size:22px;font-weight:800;letter-spacing:3px;color:#ffffff;">YUNI</span>
-<span style="${font}font-size:12px;color:#A7ABF6;letter-spacing:1px;padding-left:10px;">ERKLÄRVIDEOS &amp; PERFORMANCE</span>
 <p style="${font}margin:18px 0 0 0;font-size:21px;line-height:1.3;font-weight:700;color:#ffffff;">${esc(topic.subject)}</p>
 </td></tr>
 <tr><td style="padding:34px 32px 8px 32px;${font}">
@@ -44,10 +43,7 @@ export function notReachedHtml(name: string, sig: Signature, topic: { subject: s
 <p style="margin:0 0 26px 0;font-size:15px;line-height:1.65;color:#3A3F5C;">Damit Sie sich schon vorab ein Bild machen können, finden Sie unten eine Auswahl unserer Arbeiten. Und wenn es Ihnen besser passt, buchen Sie sich einfach direkt einen Termin – 30 Minuten, unverbindlich, per Google Meet.</p>
 </td></tr>
 <tr><td style="padding:0 32px 8px 32px;">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-<td style="padding:0 10px 12px 0;">${btn(WORK_URL, 'Beispielvideos ansehen', false)}</td>
-<td style="padding:0 0 12px 0;">${btn(BOOKING_URL, 'Termin buchen', true)}</td>
-</tr></table>
+<div style="font-size:0;"><div style="display:inline-block;margin:0 10px 12px 0;">${btn(WORK_URL, 'Beispielvideos ansehen', false)}</div><div style="display:inline-block;margin:0 0 12px 0;">${btn(BOOKING_URL, 'Termin buchen', true)}</div></div>
 </td></tr>
 <tr><td style="padding:14px 32px 30px 32px;${font}">
 <p style="margin:0 0 22px 0;font-size:14px;line-height:1.6;color:#6B7194;">Oder antworten Sie einfach auf diese E-Mail mit einer Uhrzeit, zu der wir Sie gut erreichen – wir rufen dann zurück.</p>
