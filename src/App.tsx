@@ -9,6 +9,7 @@ import ContactModal from './components/ContactModal'
 import ImportLeads from './components/ImportLeads'
 import Login from './components/Login'
 import SalesRepView from './components/SalesRepView'
+import QuoteTemplates from './components/QuoteTemplates'
 import { Plus, LogOut, Upload, Users, RefreshCw, LayoutGrid, GitBranch, MessageSquare, KeyRound, List, Columns } from 'lucide-react'
 
 type View = 'dashboard' | 'pipeline' | 'activities' | 'team'
@@ -98,6 +99,7 @@ function TeamView({ onOpenLeads, onPreview }: { onOpenLeads: (repId: string) => 
 
   return (
     <div className="space-y-6 animate-fadeUp">
+      <QuoteTemplates />
       <div className="card p-6">
         <h2 className="text-lg font-bold text-ink-900 mb-4">Neuen Vertriebler anlegen</h2>
         <div className="bg-brand-50 rounded-xl p-4 mb-4">

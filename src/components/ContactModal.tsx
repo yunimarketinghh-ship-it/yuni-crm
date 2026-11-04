@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase, Contact, Profile } from '../lib/supabase'
 import { useEscape } from '../lib/useEscape'
+import QuotePanel, { QUOTE_EARLY_STATUSES } from './QuotePanel'
 import { X, Save, Trash2, UserMinus } from 'lucide-react'
 
 const PIPELINE_OPTIONS = [
@@ -147,6 +148,12 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
               </div>
             )
           })()}
+
+          {contact && <QuotePanel contact={contact} onChanged={r => setForm(f => ({
+            ...f,
+            pipeline_status: QUOTE_EARLY_STATUSES.includes(f.pipeline_status) ? 'angebot' : f.pipeline_status,
+            price: r.net != null ? String(r.net) : f.price,
+          }))} />}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">

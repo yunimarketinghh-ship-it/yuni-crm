@@ -3,6 +3,7 @@ import { supabase, Contact, Activity, Profile } from '../lib/supabase'
 import { LogOut, Phone, Mail, Building2, MessageSquare, TrendingUp, CheckCircle, Clock, AlertCircle, Plus, X, PhoneCall } from 'lucide-react'
 import Dashboard from './Dashboard'
 import PipelineList from './PipelineList'
+import QuotePanel, { QUOTE_EARLY_STATUSES } from './QuotePanel'
 import { useEscape } from '../lib/useEscape'
 
 const STATUS_LABELS: Record<string, { label: string; color: string; activeColor: string; icon: React.ReactNode }> = {
@@ -55,7 +56,7 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
     fetchActivities()
   }, [fetchActivities])
 
-  const originalStatus = contact.pipeline_status || 'lead'
+  const [originalStatus, setOriginalStatus] = useState(contact.pipeline_status || 'lead')
   const statusChanged = status !== originalStatus
   const hasChanges = statusChanged || note.trim().length > 0
 
@@ -203,6 +204,11 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
               {saving ? 'Wird gespeichert…' : 'Speichern'}
             </button>
           </div>
+
+          <QuotePanel contact={contact} onChanged={() => {
+            onUpdated(); fetchActivities()
+            if (QUOTE_EARLY_STATUSES.includes(originalStatus)) { setOriginalStatus('angebot'); if (!statusChanged) setStatus('angebot') }
+          }} />
 
           {/* Activity log */}
           {activities.length > 0 && (
