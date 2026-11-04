@@ -3,6 +3,7 @@ import { supabase, Contact, Activity, Profile } from '../lib/supabase'
 import { LogOut, Phone, Mail, Building2, MessageSquare, TrendingUp, CheckCircle, Clock, AlertCircle, Plus, X, PhoneCall } from 'lucide-react'
 import Dashboard from './Dashboard'
 import PipelineList from './PipelineList'
+import NotReachedMail from './NotReachedMail'
 import QuotePanel, { QUOTE_EARLY_STATUSES } from './QuotePanel'
 import { useEscape } from '../lib/useEscape'
 
@@ -137,6 +138,7 @@ function ContactDetail({ contact, onClose, onUpdated, userId }: ContactDetailPro
               </a>
             )}
           </div>
+          {contact.email && <NotReachedMail contact={contact} userId={userId} onSent={() => fetchActivities()} />}
 
           {/* Contact info */}
           <div className="space-y-2">

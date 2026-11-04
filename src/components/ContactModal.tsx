@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase, Contact, Profile } from '../lib/supabase'
 import { useEscape } from '../lib/useEscape'
+import NotReachedMail from './NotReachedMail'
 import QuotePanel, { QUOTE_EARLY_STATUSES } from './QuotePanel'
 import { X, Save, Trash2, UserMinus } from 'lucide-react'
 
@@ -148,6 +149,8 @@ export default function ContactModal({ contact, onClose, onSave }: Props) {
               </div>
             )
           })()}
+
+          {contact && contact.email && <NotReachedMail contact={contact} />}
 
           {contact && <QuotePanel contact={contact} onChanged={r => setForm(f => ({
             ...f,
