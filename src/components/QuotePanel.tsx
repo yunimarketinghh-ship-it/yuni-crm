@@ -100,7 +100,7 @@ export default function QuotePanel({ contact, onChanged }: Props) {
     const subject = `Ihr Angebot ${q.voucher_number} – YUNI GmbH`
     const greeting = contact.name ? `Guten Tag ${contact.name},` : 'Guten Tag,'
     const body = `${greeting}\n\nvielen Dank für das angenehme Gespräch. Anbei erhalten Sie wie besprochen unser Angebot ${q.voucher_number}${tplName ? ` für ${tplName}` : ''}.\n\nDas Angebot ist 14 Tage gültig. Bei Fragen erreichen Sie mich jederzeit gerne.\n\nMit freundlichen Grüßen\n${myName}\nYUNI GmbH`
-    const company = myEmail.endsWith('@yuni-gmbh.de') ? myEmail : ''
+    const company = myEmail.endsWith('@yuni-gmbh.de') ? myEmail : 'erklaervideo@yuni-gmbh.de' // Admin: Firmen-Hauptkonto
     const href = company
       ? `https://mail.google.com/mail/?authuser=${encodeURIComponent(company)}&view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
       : `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`

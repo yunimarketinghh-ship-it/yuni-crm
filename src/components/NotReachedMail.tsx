@@ -99,7 +99,7 @@ export default function NotReachedMail({ contact, userId, className, onSent }: P
       return
     }
     const to = contact.email || ''
-    const company = myEmail.endsWith('@yuni-gmbh.de') ? myEmail : ''
+    const company = myEmail.endsWith('@yuni-gmbh.de') ? myEmail : 'erklaervideo@yuni-gmbh.de' // Admin: Firmen-Hauptkonto
     const href = company
       ? `https://mail.google.com/mail/?authuser=${encodeURIComponent(company)}&view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(NOT_REACHED_SUBJECT)}`
       : `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(NOT_REACHED_SUBJECT)}`
