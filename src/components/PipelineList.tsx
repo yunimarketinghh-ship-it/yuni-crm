@@ -42,11 +42,14 @@ type Props = {
 
 type StoredFilters = { stage?: string; search?: string; sort?: string; rep?: string; month?: string }
 const FILTER_KEY = 'yuni-crm-lead-filters'
+// Filter gelten nur für die laufende Sitzung (Tab). Nach Neuladen/neuem Tab startet die Liste immer mit ALLEN Leads,
+// damit ein vergessener Vertriebler-/Monatsfilter nie so aussieht, als wären Leads weg.
+try { localStorage.removeItem(FILTER_KEY) } catch { /* ignore */ }
 function loadFilters(): StoredFilters {
-  try { return JSON.parse(localStorage.getItem(FILTER_KEY) || '{}') } catch { return {} }
+  try { return JSON.parse(sessionStorage.getItem(FILTER_KEY) || '{}') } catch { return {} }
 }
 function saveFilters(f: StoredFilters) {
-  try { localStorage.setItem(FILTER_KEY, JSON.stringify(f)) } catch { /* ignore */ }
+  try { sessionStorage.setItem(FILTER_KEY, JSON.stringify(f)) } catch { /* ignore */ }
 }
 
 const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
@@ -244,6 +247,12 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
           </select>
         </div>
         <div className="ml-auto flex items-center gap-2">
+          {(filterRep !== 'alle' || filterMonth !== 'alle' || search.trim()) && (
+            <button onClick={() => { setFilterRep('alle'); setFilterMonth('alle'); setSearch('') }}
+              className="text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-full hover:bg-orange-100">
+              Filter aktiv · alle anzeigen
+            </button>
+          )}
           <span className="text-xs text-ink-500 font-semibold bg-surface px-3 py-1.5 rounded-full num">
             {filtered.length} Leads
           </span>
