@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase, Contact, Deal, Activity, Profile } from './lib/supabase'
 import { withRetry } from './lib/fetchRetry'
@@ -166,6 +166,10 @@ export default function App() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [showContactModal, setShowContactModal] = useState(false)
+  // Zuletzt geöffneter Lead: wird in der Liste markiert, und nach dem Schließen springt die Liste dorthin zurück
+  const [lastOpenedId, setLastOpenedId] = useState<string | null>(null)
+  const [returnTick, setReturnTick] = useState(0)
+  const savedScrollY = useRef(0)
   const [showImportModal, setShowImportModal] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
   const [salesReps, setSalesReps] = useState<Profile[]>([])
@@ -270,7 +274,13 @@ export default function App() {
   }, [profile, fetchData])
 
   const handleLogout = async () => { await supabase.auth.signOut() }
-  const handleSelectContact = (contact: Contact) => { setSelectedContact(contact); setShowContactModal(true) }
+  const handleSelectContact = (contact: Contact) => {
+    savedScrollY.current = window.scrollY
+    setLastOpenedId(contact.id)
+    setSelectedContact(contact)
+    setShowContactModal(true)
+  }
+  const closeContactModal = () => { setShowContactModal(false); setSelectedContact(null); setReturnTick(t => t + 1) }
   const handleGoToRep = (repId: string) => {
     setPipelineStage(null)
     setPipelineMonth(null)
@@ -388,7 +398,7 @@ export default function App() {
                   </div>
                 </div>
                 {pipelineMode === 'list'
-                  ? <PipelineList key={(pipelineStage || 'all') + '|' + (pipelineMonth || 'alle') + '|' + (pipelineRep || 'alle')} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} initialStage={pipelineStage} initialMonth={pipelineMonth} initialRep={pipelineRep} salesReps={salesReps} />
+                  ? <PipelineList key={(pipelineStage || 'all') + '|' + (pipelineMonth || 'alle') + '|' + (pipelineRep || 'alle')} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} initialStage={pipelineStage} initialMonth={pipelineMonth} initialRep={pipelineRep} salesReps={salesReps} highlightId={lastOpenedId} returnTick={returnTick} savedScrollY={savedScrollY} />
                   : <KanbanBoard deals={deals} contacts={contacts} onRefresh={fetchContacts} onSelectContact={handleSelectContact} />
                 }
               </div>
@@ -398,7 +408,7 @@ export default function App() {
           </>
         )}
       </main>
-      {showContactModal && <ContactModal contact={selectedContact} onClose={() => { setShowContactModal(false); setSelectedContact(null) }} onSave={() => { fetchData(); setShowContactModal(false); setSelectedContact(null) }} />}
+      {showContactModal && <ContactModal contact={selectedContact} onClose={closeContactModal} onSave={async () => { closeContactModal(); await fetchData(); setReturnTick(t => t + 1) }} />}
       {showImportModal && <ImportLeads onClose={() => setShowImportModal(false)} onComplete={fetchData} />}
     </div>
   )

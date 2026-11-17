@@ -33,6 +33,9 @@ type Props = {
   contacts: Contact[]
   onRefresh: () => void
   onSelectContact: (c: Contact) => void
+  highlightId?: string | null
+  returnTick?: number
+  savedScrollY?: { current: number }
   initialStage?: string | null
   initialMonth?: string | null   // 'YYYY-MM'
   initialRep?: string | null
@@ -62,7 +65,21 @@ const monthLabel = (k: string) => {
   return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`
 }
 
-export default function PipelineList({ contacts, onRefresh, onSelectContact, initialStage, initialMonth, initialRep, salesReps }: Props) {
+export default function PipelineList({ contacts, onRefresh, onSelectContact, initialStage, initialMonth, initialRep, salesReps, highlightId, returnTick, savedScrollY }: Props) {
+  // Nach dem Schließen eines Leads: zur zuletzt geöffneten Reihe zurückspringen
+  useEffect(() => {
+    if (!returnTick) return
+    requestAnimationFrame(() => {
+      const row = highlightId ? document.querySelector(`[data-lead-id="${highlightId}"]`) : null
+      if (row) {
+        const r = row.getBoundingClientRect()
+        if (r.top < 90 || r.bottom > window.innerHeight) row.scrollIntoView({ block: 'center', behavior: 'instant' as ScrollBehavior })
+      } else if (savedScrollY) {
+        window.scrollTo({ top: savedScrollY.current, behavior: 'instant' as ScrollBehavior })
+      }
+    })
+  }, [returnTick])
+
   // Filter bleiben erhalten (auch nach Speichern, Tab-Wechsel oder Neuladen); Sprünge aus Dashboard/Team überschreiben sie gezielt
   const stored = loadFilters()
   const fromNav = !!(initialStage || initialMonth || initialRep)
@@ -356,9 +373,10 @@ export default function PipelineList({ contacts, onRefresh, onSelectContact, ini
                 return (
                   <tr
                     key={contact.id}
+                    data-lead-id={contact.id}
                     onClick={() => onSelectContact(contact)}
                     title="Lead öffnen"
-                    className={`hover:bg-surface group transition-colors cursor-pointer ${selected.has(contact.id) ? 'bg-brand-50/60' : ''}`}
+                    className={`hover:bg-surface group transition-colors cursor-pointer ${selected.has(contact.id) ? 'bg-brand-50/60' : contact.id === highlightId ? 'bg-amber-50 shadow-[inset_4px_0_0_0_#f59e0b]' : ''}`}
                   >
 
                     {/* Checkbox */}
