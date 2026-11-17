@@ -6,6 +6,7 @@ import PipelineList from './PipelineList'
 import NotReachedMail from './NotReachedMail'
 import QuotePanel, { QUOTE_EARLY_STATUSES } from './QuotePanel'
 import { useEscape } from '../lib/useEscape'
+import { withRetry } from '../lib/fetchRetry'
 
 const STATUS_LABELS: Record<string, { label: string; color: string; activeColor: string; icon: React.ReactNode }> = {
   nicht_kontaktiert: { label: 'Nicht kontaktiert', color: 'bg-ink-100 text-ink-500', activeColor: 'bg-ink-700 text-white', icon: <Clock className="w-3 h-3" /> },
@@ -247,21 +248,23 @@ export default function SalesRepView({ profile, previewMode, onExitPreview }: Pr
   const [listStage, setListStage] = useState<string | null>(null)
 
   const fetchContacts = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await withRetry(() => supabase
       .from('contacts')
       .select('*')
       .eq('assigned_to', profile.id)
-      .order('lead_date', { ascending: false, nullsFirst: false })
-    setContacts(data || [])
+      .order('lead_date', { ascending: false, nullsFirst: false }))
+    // Bei Verbindungsfehler alte Liste behalten statt alles auf 0 zu setzen
+    if (error) console.error('Kontakte-Fehler:', error)
+    else if (data) setContacts(data as Contact[])
     setLoading(false)
   }, [profile.id])
 
   const fetchActivities = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await withRetry(() => supabase
       .from('activities')
       .select('*')
-      .order('created_at', { ascending: false })
-    setActivities(data || [])
+      .order('created_at', { ascending: false }))
+    if (!error && data) setActivities(data as Activity[])
   }, [])
 
   useEffect(() => {

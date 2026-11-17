@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase, Contact, Deal, Activity, Profile } from './lib/supabase'
+import { withRetry } from './lib/fetchRetry'
 import Dashboard from './components/Dashboard'
 import KanbanBoard from './components/KanbanBoard'
 import PipelineList from './components/PipelineList'
@@ -235,26 +236,27 @@ export default function App() {
   }, [user])
 
   const fetchContacts = useCallback(async () => {
-    const { data, error } = await supabase.from('contacts').select('*').order('created_at', { ascending: false })
-    if (error) { console.error('Kontakte-Fehler:', error); setFetchError('Kontakte: ' + error.message) } else { setFetchError(null) }
-    setContacts(data || [])
+    const { data, error } = await withRetry(() => supabase.from('contacts').select('*').order('created_at', { ascending: false }))
+    // Bei Verbindungsfehler alte Liste behalten statt alles auf 0 zu setzen
+    if (error) { console.error('Kontakte-Fehler:', error); setFetchError('Verbindung wackelt – Liste nicht aktualisiert. ' + error.message) }
+    else { setFetchError(null); if (data) setContacts(data as Contact[]) }
   }, [])
 
   const fetchDeals = useCallback(async () => {
-    const { data, error } = await supabase.from('deals').select('*').order('created_at', { ascending: false })
+    const { data, error } = await withRetry(() => supabase.from('deals').select('*').order('created_at', { ascending: false }))
     if (error) console.error('Deals-Fehler:', error)
-    setDeals(data || [])
+    else if (data) setDeals(data as Deal[])
   }, [])
 
   const fetchActivities = useCallback(async () => {
-    const { data, error } = await supabase.from('activities').select('*').order('created_at', { ascending: false }).limit(100)
+    const { data, error } = await withRetry(() => supabase.from('activities').select('*').order('created_at', { ascending: false }).limit(100))
     if (error) console.error('Aktivitaeten-Fehler:', error)
-    setActivities(data || [])
+    else if (data) setActivities(data as Activity[])
   }, [])
 
   const fetchSalesReps = useCallback(async () => {
-    const { data } = await supabase.from('profiles').select('*').eq('role', 'sales_rep')
-    setSalesReps(data || [])
+    const { data, error } = await withRetry(() => supabase.from('profiles').select('*').eq('role', 'sales_rep'))
+    if (!error && data) setSalesReps(data as Profile[])
   }, [])
 
   const fetchData = useCallback(async () => {
